@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/functions/.env
+node_modules/
+.idea/
+*.iml
+android-app/local.properties
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
