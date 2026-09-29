@@ -12,7 +12,7 @@ const TOOL = {
   type: "function",
   function: {
     name: "create_google_calendar_event",
-    description: "Propose a calendar event. Only call when title, date and start time are clear.",
+    description: "Propose a calendar event for the user to confirm. Only call when date and start time are clear.",
     parameters: {
       type: "object",
       properties: {
@@ -33,10 +33,14 @@ export class OpenAICompatibleProvider implements LLMProvider {
 
   async extractCalendarIntent(input: IntentInput): Promise<ProviderResult> {
     const system =
-      `You are LUNA, a personal assistant. Current datetime: ${input.nowISO}. User timezone: ${input.timezone}. ` +
-      `Resolve relative dates ("tomorrow", "next Monday") against the current datetime. ` +
-      `If title, date or start time is missing or ambiguous, ask ONE short clarifying question instead of calling the tool. ` +
-      `If duration is missing, ask (or propose 1 hour). Never invent attendee emails.`;
+      `You are LUNA, a personal assistant that only schedules Google Calendar events. ` +
+      `Current local datetime: ${input.nowLocal}. User timezone: ${input.timezone}. ` +
+      `Resolve relative dates ("tomorrow", "besok", "next Monday") against the current local datetime. ` +
+      `Always use timezone "${input.timezone}" and write datetimes as ISO 8601 with its UTC offset. ` +
+      `If the date or start time is missing or ambiguous, ask ONE short clarifying question instead of calling the tool. ` +
+      `If no title is given, derive a short one from the request. If duration is missing, use 1 hour. ` +
+      `Never invent attendee emails. If the request is not about scheduling, briefly say you can only schedule events. ` +
+      `Reply in the same language as the user.`;
 
     const res = await fetch(`${this.cfg.baseUrl}/chat/completions`, {
       method: "POST",
@@ -53,7 +57,11 @@ export class OpenAICompatibleProvider implements LLMProvider {
     const msg = data.choices?.[0]?.message;
     const call = msg?.tool_calls?.[0];
     if (call?.function?.name === "create_google_calendar_event") {
-      return { kind: "tool_call", args: JSON.parse(call.function.arguments) };
+      try {
+        return { kind: "tool_call", args: JSON.parse(call.function.arguments) };
+      } catch {
+        return { kind: "tool_call", args: null }; // malformed JSON -> fails validation -> clarification
+      }
     }
     return { kind: "text", text: msg?.content ?? "" };
   }

@@ -7,7 +7,18 @@ export interface CreateCalendarEventArgs {
   attendees?: string[];   // emails only
 }
 
+// luna-intent response. session_id is always returned so the app can continue the conversation.
 export type IntentResult =
-  | { kind: "clarification"; question: string }
-  | { kind: "confirm"; args: CreateCalendarEventArgs; summary: string }
-  | { kind: "chat"; message: string };
+  | { kind: "clarification"; session_id: string; question: string }
+  | { kind: "confirm"; session_id: string; confirmation_id: string; args: CreateCalendarEventArgs; summary: string };
+
+// luna-execute request / response.
+export interface ExecuteRequest {
+  confirmation_id: string; // from the confirm result; makes retries idempotent
+  args: CreateCalendarEventArgs;
+  session_id?: string;
+}
+
+export type ExecuteResult =
+  | { ok: true; event_id: string; html_link: string }
+  | { ok: false; error: "invalid_args" | "google_not_connected" | "google_reauth_required" | "calendar_error"; details?: string[] };

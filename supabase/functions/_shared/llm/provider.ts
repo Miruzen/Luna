@@ -5,7 +5,7 @@ export interface ChatMessage {
 
 export interface IntentInput {
   userText: string;
-  nowISO: string;
+  nowLocal: string; // e.g. "2026-09-29T14:03:00+07:00 (Tuesday)"
   timezone: string;
   history: ChatMessage[];
 }
