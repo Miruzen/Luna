@@ -6,6 +6,7 @@ export interface OpenAICompatibleConfig {
   baseUrl: string;
   apiKey: string;
   model: string;
+  extraBody?: Record<string, unknown>; // provider-specific request fields
 }
 
 const TOOL = {
@@ -49,6 +50,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
         model: this.cfg.model,
         messages: [{ role: "system", content: system }, ...input.history, { role: "user", content: input.userText }],
         tools: [TOOL],
+        ...this.cfg.extraBody,
       }),
     });
     if (!res.ok) throw new Error(`LLM error ${res.status}: ${await res.text()}`);

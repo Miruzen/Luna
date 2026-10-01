@@ -16,6 +16,9 @@ export function createProvider(): LLMProvider {
         baseUrl: "https://api.deepseek.com",
         apiKey: Deno.env.get("DEEPSEEK_API_KEY") ?? "",
         model: config.llmModel,
+        // Thinking is on by default; with tools it requires echoing reasoning_content back
+        // every turn (else 400). Intent extraction doesn't need it, and it adds latency.
+        extraBody: { thinking: { type: "disabled" } },
       });
     default:
       throw new Error(`Unknown LLM_PROVIDER: ${config.llmProvider}`);
