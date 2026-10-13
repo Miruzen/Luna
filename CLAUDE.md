@@ -1,18 +1,55 @@
-# LUNA V0.1 — project rules for Claude Code
+# LUNA — permanent project rules
 
-## Goal (only this)
-User speaks -> STT -> LLM extracts calendar intent -> app asks user to confirm -> backend creates Google Calendar event -> confirmation.
+These rules hold across every stage. Stage-specific work lives in `STAGE_<n>/`.
 
-## Hard rules
-- Never put API keys / OAuth secrets in the Android app. Server-side only (Supabase Edge Functions).
-- LLM never calls Google directly. LLM proposes structured args; backend validates; only then execute after explicit user confirmation.
-- Only one tool: `create_google_calendar_event`.
-- LLM provider must stay swappable (see supabase/functions/_shared/llm). No provider-specific code outside that folder.
-- Timezone is configurable (DEFAULT_TIMEZONE, default Asia/Jakarta). Always inject current datetime + timezone into the LLM prompt.
-- Keep it simple. No microservices, no multi-agent, no long-term memory, no vector DB.
+## What LUNA is
+LUNA is Nanda's personal AI and the architectural center of this project.
 
-## NOT in V0.1
-Long-term memory, WhatsApp, Discord, calls, maps, Bluetooth, proactive/background actions, financial integrations.
+Nanda → LUNA → execution layer (currently Jarvis) → execution → LUNA → Nanda
+
+## Decision hierarchy (runtime)
+1. **Nanda** — final authority. Approves every outward-facing action and can override anything.
+2. **LUNA** — second decision maker. Decides intent, what to delegate, under which constraints and permissions, and evaluates results. It acts only within what Nanda has approved.
+3. **Execution layer (Jarvis)** — makes no strategic decisions. It decides only HOW to carry out a delegated task, within the permissions LUNA passes in. LUNA's approval *is* its authorization: it does not ask again (ADR-013).
+
+Lower layers never widen their own authority. If a decision isn't clearly theirs, it escalates up: Jarvis → LUNA → Nanda.
+(For building this project, Nanda is also the architecture owner; Claude is the engineering executor — see Workflow.)
+
+## Architectural boundaries
+- **LUNA owns WHO / WHY / WHAT:** identity, user relationship, intent, context, mission, desired outcome, delegation, constraints, permissions, strategic evaluation.
+- **The execution layer owns HOW:** execution planning, execution agents, agent coordination, tool/MCP use, retries, workers, execution verification.
+- LUNA delegates only through the engine-agnostic **Execution Interface**. LUNA core never depends on Jarvis-specific internals; anything Jarvis-specific lives in the Jarvis adapter.
+- Invariant: if Jarvis is removed tomorrow, LUNA's strategic core stays intact. Only the implementation behind the Execution Interface is replaced.
+- Execution agents never automatically receive all LUNA memory.
+- LUNA core does not build its own multi-agent system. Agents belong to the execution layer.
+- Full rationale: `docs/architecture/ARCHITECTURE.md`. Decision log: `docs/DECISIONS.md`.
+
+## Safety rules (non-negotiable)
+- Secrets (LLM keys, OAuth client secrets, refresh tokens, service-role keys) live server-side only, in Supabase Edge Function secrets. Never in a client app, never in git.
+- The LLM only proposes structured actions. The backend validates them; the LLM never executes anything directly.
+- Outward-facing actions (creating events, sending messages, …) run only after explicit user confirmation, given per action. LUNA owns that confirmation; never rely on the execution layer's "always approve" memory.
+- The LLM provider stays swappable: provider-specific code lives only in `supabase/functions/_shared/llm/`.
+- Always inject the current local datetime and timezone (`DEFAULT_TIMEZONE`, default `Asia/Jakarta`) into LLM prompts.
+
+## Workflow
+- Work proceeds in stages. Read the active stage instructions before doing stage work.
+- Integration order: Discover → Understand → Map → Compare → Recommend → Approve → Integrate.
+- Inspect actual source (LUNA's and Jarvis') before modifying or integrating it. Never integrate a component just because documentation says it exists.
+- Do not copy or merge Jarvis code into LUNA unless Nanda explicitly authorizes it.
+- Do not build speculative future-stage architecture.
+- Deferred decisions stay deferred (see `docs/DECISIONS.md`). If one blocks a task, explain why and propose the smallest reversible step.
+- Claude is the engineering executor, not the final architecture owner. When findings conflict with a recorded decision, do not silently change the architecture. Report: finding → evidence → impact → options → recommendation → whether the stage must change.
+
+## Repository map
+- `supabase/` — LUNA backend: migrations + Edge Functions (Deno/TypeScript)
+- `android-app/` — client app (paused; voice/mobile are out of Stage 1 scope)
+- `docs/architecture/` — architecture docs and reconnaissance reports
+- `docs/DECISIONS.md` — decision log (accepted and deferred decisions)
+- `STAGE_<n>/` — stage-specific instructions and scope
+
+## Active stage: Stage 1
+@STAGE_1/CLAUDE_STAGE_1.md
+Scope and stop conditions: `STAGE_1/IMPLEMENTATION_SCOPE.md`
 
 ## Working style
 - Explain trade-offs before big changes. Ask before anything irreversible.
