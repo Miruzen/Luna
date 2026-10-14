@@ -16,5 +16,6 @@ export type ProviderResult =
   | { kind: "text"; text: string };
 
 export interface LLMProvider {
+  readonly name: string;
   extractCalendarIntent(input: IntentInput): Promise<ProviderResult>;
 }

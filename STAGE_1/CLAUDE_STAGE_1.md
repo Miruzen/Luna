@@ -95,10 +95,10 @@ Claude is the engineering executor, not the final architecture owner.
 ## Deferred infrastructure decisions
 
 Four decisions stay deferred during Stage 1 (trade-offs and evidence in `docs/DECISIONS.md`, D-01…D-04):
-1. Jarvis hosting — local PC vs VPS
-2. Codebase strategy — fork vs contribute upstream
-3. Model fallback — if DeepSeek tool-calling proves unreliable
-4. Memory/persona — preserve, adapt or disable Jarvis' own memory/persona
+1. Jarvis hosting — local PC vs VPS. **Still deferred**; direction: cloud AI only, mailbox/pull transport preferred.
+2. Codebase strategy — fork vs contribute upstream. **Decided: fork-first (ADR-014)** as a git subtree in a dedicated Jarvis folder (not added yet).
+3. Model fallback — if DeepSeek tool-calling proves unreliable. **Decided: OpenRouter as one path with provider fallback (ADR-016)**; not implemented yet.
+4. Memory/persona — preserve, adapt or disable Jarvis' own memory/persona. **Decided: disabled, review ~2027-01 (ADR-015).**
 
 Rules:
 - Document trade-offs and findings; make no irreversible choice and implement no assumption about them.
@@ -121,3 +121,19 @@ Stage 1 is complete only when:
 - Architecture-changing discoveries are surfaced for review.
 
 Build the door first. Understand the machine behind the door. Do not rebuild the machine before we know what we need.
+
+## Status: COMPLETED (2026-10-14)
+
+Reviewed and accepted by Nanda on 2026-10-14. Deliverables:
+1. Current LUNA architecture map: `docs/architecture/CURRENT_LUNA_ARCHITECTURE.md`
+2. Execution Boundary contract: `supabase/functions/_shared/execution/contract.ts`
+3. Execution Interface: `supabase/functions/_shared/execution/interface.ts`
+4. Jarvis Adapter skeleton: `supabase/functions/_shared/execution/jarvis/` (mocked transport)
+5. Tests: `deno test` in `supabase/functions`
+6. Jarvis reconnaissance: `docs/architecture/JARVIS_REPOSITORY_RECON_STAGE_1.md`
+7. Reuse/adapt/ignore inventory: recon report §5
+8. Unresolved questions / decisions: recon report §9, `docs/DECISIONS.md`
+
+**Open item carried forward:** "existing functionality remains intact" is proven by unit and regression tests only. The end-to-end baseline test of `luna-intent` is still pending (skipped to save cost). Plan: run it on an OpenRouter free model (ADR-016) at $0.
+
+Also done after acceptance (ADR-016): OpenRouter added as one LLM path with a provider fallback chain, in `_shared/llm/`.

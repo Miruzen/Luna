@@ -1,6 +1,5 @@
+// LLM provider settings are read in _shared/llm/factory.ts (provider-specific code stays there).
 export const config = {
-  llmProvider: Deno.env.get("LLM_PROVIDER") ?? "openai",
-  llmModel: Deno.env.get("LLM_MODEL") ?? "",
   defaultTimezone: Deno.env.get("DEFAULT_TIMEZONE") ?? "Asia/Jakarta",
   googleClientId: Deno.env.get("GOOGLE_CLIENT_ID") ?? "",
   googleClientSecret: Deno.env.get("GOOGLE_CLIENT_SECRET") ?? "",

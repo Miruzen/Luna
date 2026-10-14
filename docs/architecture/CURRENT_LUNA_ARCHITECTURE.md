@@ -18,7 +18,7 @@ Supabase Edge Functions (Deno/TypeScript) ─ project "Luna" (xqonuxrspwysoksclp
   ├── luna-execute           confirmed proposal → re-validate → Google Calendar → log
   └── auth-google-exchange   Google serverAuthCode → refresh token (server-side)
   │
-  ├── _shared/llm/           provider abstraction (DeepSeek / OpenAI, OpenAI-compatible)
+  ├── _shared/llm/           provider chain with fallback (OpenRouter → DeepSeek; OpenAI optional)
   ├── _shared/calendar/      validation + Google Calendar/OAuth client
   └── Postgres (RLS)         sessions, turns, Google tokens, event log
   │
@@ -47,7 +47,7 @@ External: DeepSeek API · Google OAuth · Google Calendar API
 | Module | Responsibility | Stage 1 owner | Note |
 |---|---|---|---|
 | `luna-intent/index.ts` | Intent capture, session, clarification, proposal | **LUNA** (WHAT/WHY) | Fits Stage 1 |
-| `_shared/llm/*` | LLM provider abstraction; DeepSeek thinking disabled | **LUNA** (intelligence) | Provider-specific code stays here (rule kept) |
+| `_shared/llm/*` | LLM provider abstraction + fallback chain (OpenRouter → DeepSeek, ADR-016); DeepSeek thinking disabled | **LUNA** (intelligence) | Provider-specific code stays here (rule kept) |
 | `_shared/calendar/validate.ts` | Validates proposed args | **LUNA** (constraints) | LUNA-side guard before delegation |
 | `_shared/time.ts`, `config.ts`, `types.ts`, `http.ts` | Utilities, config, DTOs, auth helpers | **LUNA** | — |
 | Confirmation step (client + `confirmation_id`) | Nanda approves the action | **Nanda → LUNA** (ADR-012) | — |
@@ -87,7 +87,7 @@ STAGE 1: luna-execute ── validate ── ExecutionInterface ──┬── 
 | Secrets | `LLM_PROVIDER=deepseek`, `LLM_MODEL=deepseek-flash`, `DEEPSEEK_API_KEY`, `DEFAULT_TIMEZONE` set. Google client ID/secret **not set**. |
 | Google Cloud (OAuth client, Calendar API) | Not configured |
 | Android app | Not created |
-| Automated tests | `deno test` in `supabase/functions`: 24 tests (contract, interface, Jarvis adapter with a mocked transport, and regression tests for `validate.ts`/`time.ts`). Added 2026-10-13. |
+| Automated tests | `deno test` in `supabase/functions`: 36 tests (contract, interface, Jarvis adapter with a mocked transport, LLM provider chain/fallback, and regression tests for `validate.ts`/`time.ts`). |
 
 ## 7. Conformance with `CLAUDE.md`
 

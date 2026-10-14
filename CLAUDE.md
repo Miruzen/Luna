@@ -35,7 +35,7 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 - Work proceeds in stages. Read the active stage instructions before doing stage work.
 - Integration order: Discover → Understand → Map → Compare → Recommend → Approve → Integrate.
 - Inspect actual source (LUNA's and Jarvis') before modifying or integrating it. Never integrate a component just because documentation says it exists.
-- Do not copy or merge Jarvis code into LUNA unless Nanda explicitly authorizes it.
+- Do not copy or merge Jarvis code into LUNA unless Nanda explicitly authorizes it. (Authorized layout for later: a git subtree in a dedicated Jarvis folder, ADR-014. Adding it still needs a go-ahead.) LUNA code never imports from the Jarvis folder.
 - Do not build speculative future-stage architecture.
 - Deferred decisions stay deferred (see `docs/DECISIONS.md`). If one blocks a task, explain why and propose the smallest reversible step.
 - Claude is the engineering executor, not the final architecture owner. When findings conflict with a recorded decision, do not silently change the architecture. Report: finding → evidence → impact → options → recommendation → whether the stage must change.
@@ -47,7 +47,8 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 - `docs/DECISIONS.md` — decision log (accepted and deferred decisions)
 - `STAGE_<n>/` — stage-specific instructions and scope
 
-## Active stage: Stage 1
+## Current stage: Stage 1 (completed 2026-10-14)
+Stage 1 rules stay in force until Stage 2 instructions exist. Open item: end-to-end baseline test (see the stage file).
 @STAGE_1/CLAUDE_STAGE_1.md
 Scope and stop conditions: `STAGE_1/IMPLEMENTATION_SCOPE.md`
 

@@ -1,13 +1,18 @@
 import type { IntentInput, LLMProvider, ProviderResult } from "./provider.ts";
 
-// OpenAI and DeepSeek both speak the OpenAI chat-completions format,
-// so one class covers both. Add a separate class only if a provider differs.
+// OpenAI, DeepSeek and OpenRouter all speak the OpenAI chat-completions format,
+// so one class covers them. Add a separate class only if a provider differs.
 export interface OpenAICompatibleConfig {
+  name: string;
   baseUrl: string;
   apiKey: string;
   model: string;
   extraBody?: Record<string, unknown>; // provider-specific request fields
+  timeoutMs?: number; // a hung provider must fail fast so the fallback can take over
+  fetchFn?: typeof fetch; // injectable for tests
 }
+
+const DEFAULT_TIMEOUT_MS = 20_000;
 
 const TOOL = {
   type: "function",
@@ -30,7 +35,11 @@ const TOOL = {
 };
 
 export class OpenAICompatibleProvider implements LLMProvider {
-  constructor(private cfg: OpenAICompatibleConfig) {}
+  readonly name: string;
+
+  constructor(private cfg: OpenAICompatibleConfig) {
+    this.name = cfg.name;
+  }
 
   async extractCalendarIntent(input: IntentInput): Promise<ProviderResult> {
     const system =
@@ -43,8 +52,9 @@ export class OpenAICompatibleProvider implements LLMProvider {
       `Never invent attendee emails. If the request is not about scheduling, briefly say you can only schedule events. ` +
       `Reply in the same language as the user.`;
 
-    const res = await fetch(`${this.cfg.baseUrl}/chat/completions`, {
+    const res = await (this.cfg.fetchFn ?? fetch)(`${this.cfg.baseUrl}/chat/completions`, {
       method: "POST",
+      signal: AbortSignal.timeout(this.cfg.timeoutMs ?? DEFAULT_TIMEOUT_MS),
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.cfg.apiKey}` },
       body: JSON.stringify({
         model: this.cfg.model,
@@ -53,7 +63,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
         ...this.cfg.extraBody,
       }),
     });
-    if (!res.ok) throw new Error(`LLM error ${res.status}: ${await res.text()}`);
+    if (!res.ok) throw new Error(`${this.name} error ${res.status}: ${(await res.text()).slice(0, 300)}`);
 
     const data = await res.json();
     const msg = data.choices?.[0]?.message;
