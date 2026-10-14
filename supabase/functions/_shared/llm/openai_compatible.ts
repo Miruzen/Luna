@@ -66,6 +66,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
     if (!res.ok) throw new Error(`${this.name} error ${res.status}: ${(await res.text()).slice(0, 300)}`);
 
     const data = await res.json();
+    console.log(`${this.name} answered with model ${data.model ?? "?"}`); // OpenRouter may fall back to another model
     const msg = data.choices?.[0]?.message;
     const call = msg?.tool_calls?.[0];
     if (call?.function?.name === "create_google_calendar_event") {

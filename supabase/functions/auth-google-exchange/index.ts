@@ -2,6 +2,7 @@
 // GOOGLE_CLIENT_SECRET, and stores the refresh_token (service role only).
 // The exchange never happens on the device.
 import { CALENDAR_SCOPE, exchangeAuthCode } from "../_shared/calendar/googleCalendarClient.ts";
+import { resolveRedirectUri } from "../_shared/calendar/oauthRedirect.ts";
 import { adminClient, json, readJson, requireUser } from "../_shared/http.ts";
 
 Deno.serve(async (req) => {
@@ -14,10 +15,12 @@ Deno.serve(async (req) => {
   const body = await readJson(req);
   const code = typeof body?.code === "string" ? body.code : "";
   if (!code) return json({ error: "code is required" }, 400);
+  const redirectUri = resolveRedirectUri(body?.redirect_uri, Deno.env.get("GOOGLE_ALLOWED_REDIRECT_URIS"));
+  if (redirectUri === null) return json({ error: "redirect_uri not allowed" }, 400);
 
   let tokens;
   try {
-    tokens = await exchangeAuthCode(code);
+    tokens = await exchangeAuthCode(code, redirectUri);
   } catch (e) {
     console.error(e);
     return json({ error: "code exchange failed" }, 400);

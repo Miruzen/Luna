@@ -28,10 +28,27 @@ async function loadHistory(db: SupabaseClient, sessionId: string): Promise<ChatM
   return (data ?? []).reverse() as ChatMessage[];
 }
 
+// Per-stage timings (ms), logged and returned as a Server-Timing header to find latency.
+function stopwatch() {
+  const marks: Record<string, number> = {};
+  let last = performance.now();
+  return {
+    lap(name: string) {
+      const now = performance.now();
+      marks[name] = Math.round(now - last);
+      last = now;
+    },
+    marks,
+    header: () => Object.entries(marks).map(([k, v]) => `${k};dur=${v}`).join(", "),
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+  const sw = stopwatch();
 
   const auth = await requireUser(req);
+  sw.lap("auth");
   if (auth instanceof Response) return auth;
   const { user, db } = auth;
 
@@ -41,7 +58,9 @@ Deno.serve(async (req) => {
 
   try {
     const sessionId = await resolveSession(db, user.id, body?.session_id);
+    sw.lap("session");
     const history = await loadHistory(db, sessionId);
+    sw.lap("history");
     const tz = config.defaultTimezone;
 
     const result = await createProvider().extractCalendarIntent({
@@ -50,6 +69,7 @@ Deno.serve(async (req) => {
       timezone: tz,
       history,
     });
+    sw.lap("llm");
 
     let out: IntentResult;
     let assistantTurn: string;
@@ -78,8 +98,12 @@ Deno.serve(async (req) => {
       { session_id: sessionId, role: "assistant", content: assistantTurn },
     ]);
     if (error) console.error("failed to store turns", error);
+    sw.lap("store");
 
-    return json(out);
+    console.log("luna-intent timings", JSON.stringify(sw.marks));
+    const res = json(out);
+    res.headers.set("Server-Timing", sw.header());
+    return res;
   } catch (e) {
     console.error(e);
     return json({ error: "intent extraction failed" }, 500);

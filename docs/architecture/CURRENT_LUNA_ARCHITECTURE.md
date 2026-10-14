@@ -82,10 +82,10 @@ STAGE 1: luna-execute ── validate ── ExecutionInterface ──┬── 
 | Item | State |
 |---|---|
 | DB migration `20260928000000_init` | Applied [LIVE] |
-| `luna-intent` | Deployed, v3 (provider chain), `verify_jwt=true` [LIVE] · **end-to-end verified 2026-10-14** via OpenRouter free model (confirm, clarify and follow-up flows correct; ~9 s latency) |
-| `luna-execute`, `auth-google-exchange` | **Not deployed** [LIVE] · type-checked only |
-| Secrets | `LLM_PROVIDERS=openrouter,deepseek`, `OPENROUTER_API_KEY`, `OPENROUTER_MODELS` (2 free models), `DEEPSEEK_API_KEY`, `LLM_MODEL=deepseek-flash`, `DEFAULT_TIMEZONE`. Google client ID/secret **not set**. |
-| Google Cloud (OAuth client, Calendar API) | Not configured |
+| `luna-intent` | Deployed, v3 (provider chain), `verify_jwt=true` [LIVE] · **end-to-end verified 2026-10-14** via OpenRouter free model (confirm, clarify and follow-up flows correct). Latency after the model reorder: 4.3–7.1 s client-side. Server-side, the LLM takes 2.4–5.9 s (`nvidia/nemotron-3.5-lightning:free`) and DB+auth ~0.6–1.0 s; the rest is network/gateway. Per-stage timings are in the logs and the `Server-Timing` header. |
+| `luna-execute`, `auth-google-exchange` | Deployed 2026-10-14 [LIVE] · **end-to-end verified**: Google connected via the dev side door (`scripts/google-connect.ts`), a real event was created from a LUNA confirm card, and a retry with the same `confirmation_id` returned the same event (no duplicate). A retry no longer writes a second log row or turn (fixed and verified 2026-10-14). |
+| Secrets | `LLM_PROVIDERS=openrouter,deepseek`, `OPENROUTER_API_KEY`, `OPENROUTER_MODELS` (2 free models), `DEEPSEEK_API_KEY`, `LLM_MODEL=deepseek-flash`, `DEFAULT_TIMEZONE`. `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_ALLOWED_REDIRECT_URIS` set. |
+| Google Cloud (OAuth client, Calendar API) | Configured (Web client, Calendar API enabled, app in **Testing** mode: refresh tokens expire after 7 days, so a reconnect is needed weekly until the app is set to In production) |
 | Android app | Not created |
 | Automated tests | `deno test` in `supabase/functions`: 36 tests (contract, interface, Jarvis adapter with a mocked transport, LLM provider chain/fallback, and regression tests for `validate.ts`/`time.ts`). |
 

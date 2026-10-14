@@ -6,9 +6,9 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
 export class GoogleReauthRequired extends Error {}
 
-// Exchanges the Android serverAuthCode for tokens. redirect_uri is empty for codes
-// obtained via Google Identity Services on Android.
-export async function exchangeAuthCode(code: string): Promise<{ refreshToken?: string; scope: string }> {
+// Exchanges a Google auth code for tokens. redirectUri is "" for the Android serverAuthCode
+// flow, or an allowlisted URI (see oauthRedirect.ts) for the local dev connect script.
+export async function exchangeAuthCode(code: string, redirectUri = ""): Promise<{ refreshToken?: string; scope: string }> {
   const res = await fetch(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -17,7 +17,7 @@ export async function exchangeAuthCode(code: string): Promise<{ refreshToken?: s
       client_id: config.googleClientId,
       client_secret: config.googleClientSecret,
       grant_type: "authorization_code",
-      redirect_uri: "",
+      redirect_uri: redirectUri,
     }),
   });
   if (!res.ok) throw new Error(`Google code exchange failed ${res.status}: ${await res.text()}`);
@@ -51,7 +51,7 @@ export async function createCalendarEvent(
   accessToken: string,
   eventId: string,
   args: CreateCalendarEventArgs,
-): Promise<{ id: string; htmlLink: string }> {
+): Promise<{ id: string; htmlLink: string; created: boolean }> {
   const base = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
   const headers = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
   const sendUpdates = args.attendees?.length ? "all" : "none";
@@ -73,11 +73,11 @@ export async function createCalendarEvent(
     const existing = await fetch(`${base}/${eventId}`, { headers });
     if (existing.ok) {
       const e = await existing.json();
-      return { id: e.id, htmlLink: e.htmlLink };
+      return { id: e.id, htmlLink: e.htmlLink, created: false }; // retry of an already-created event
     }
   }
   if (res.status === 401) throw new GoogleReauthRequired(await res.text());
   if (!res.ok) throw new Error(`Google Calendar error ${res.status}: ${await res.text()}`);
   const e = await res.json();
-  return { id: e.id, htmlLink: e.htmlLink };
+  return { id: e.id, htmlLink: e.htmlLink, created: true };
 }

@@ -43,10 +43,12 @@ Deno.serve(async (req) => {
 
   let result: ExecuteResult;
   let status = 200;
+  let isRetry = false; // same confirmation_id sent again: event already exists, record nothing twice
   try {
     const accessToken = await refreshAccessToken(tokenRow.refresh_token);
     const event = await createCalendarEvent(accessToken, confirmationId, args);
-    await log("confirmed", { google_event_id: event.id });
+    isRetry = !event.created;
+    if (event.created) await log("confirmed", { google_event_id: event.id });
     result = { ok: true, event_id: event.id, html_link: event.htmlLink };
   } catch (e) {
     console.error(e);
@@ -61,7 +63,7 @@ Deno.serve(async (req) => {
   }
 
   // Keep the conversation aware of the outcome if the user continues talking.
-  if (typeof body?.session_id === "string") {
+  if (typeof body?.session_id === "string" && !isRetry) {
     const content = result.ok ? `Event created: ${args.title}` : `Event creation failed: ${result.error}`;
     const { error } = await db.from("conversation_turns").insert({ session_id: body.session_id, role: "assistant", content });
     if (error) console.error("failed to store turn", error);
