@@ -48,7 +48,7 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 - `STAGE_<n>/` — stage-specific instructions and scope
 
 ## Current stage: Stage 1 (completed 2026-10-14)
-Stage 1 rules stay in force until Stage 2 instructions exist. Open item: end-to-end baseline test (see the stage file).
+Stage 1 rules stay in force until Stage 2 instructions exist.
 @STAGE_1/CLAUDE_STAGE_1.md
 Scope and stop conditions: `STAGE_1/IMPLEMENTATION_SCOPE.md`
 

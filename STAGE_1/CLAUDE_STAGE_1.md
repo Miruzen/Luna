@@ -134,6 +134,6 @@ Reviewed and accepted by Nanda on 2026-10-14. Deliverables:
 7. Reuse/adapt/ignore inventory: recon report §5
 8. Unresolved questions / decisions: recon report §9, `docs/DECISIONS.md`
 
-**Open item carried forward:** "existing functionality remains intact" is proven by unit and regression tests only. The end-to-end baseline test of `luna-intent` is still pending (skipped to save cost). Plan: run it on an OpenRouter free model (ADR-016) at $0.
+**Open item — closed 2026-10-14:** end-to-end baseline of `luna-intent` (v3) passed on an OpenRouter free model at $0. Results: (1) a complete command returned a correct confirm card ("besok jam 3 sore … 1 jam" → Thu 15 Oct 15:00–16:00 WIB); (2) a missing-time command returned a clarifying question; (3) the follow-up in the same session returned a correct confirm card (10:00–11:00). No provider fallback occurred. Latency was ~8.5–10.7 s per request (free model), which is slow for voice. `luna-execute` and Google Calendar are still not deployed or tested.
 
 Also done after acceptance (ADR-016): OpenRouter added as one LLM path with a provider fallback chain, in `_shared/llm/`.

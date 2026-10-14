@@ -82,9 +82,9 @@ STAGE 1: luna-execute ── validate ── ExecutionInterface ──┬── 
 | Item | State |
 |---|---|
 | DB migration `20260928000000_init` | Applied [LIVE] |
-| `luna-intent` | Deployed, v1, `verify_jwt=true` [LIVE] · **[NOT VERIFIED]** end-to-end (baseline test on hold) |
+| `luna-intent` | Deployed, v3 (provider chain), `verify_jwt=true` [LIVE] · **end-to-end verified 2026-10-14** via OpenRouter free model (confirm, clarify and follow-up flows correct; ~9 s latency) |
 | `luna-execute`, `auth-google-exchange` | **Not deployed** [LIVE] · type-checked only |
-| Secrets | `LLM_PROVIDER=deepseek`, `LLM_MODEL=deepseek-flash`, `DEEPSEEK_API_KEY`, `DEFAULT_TIMEZONE` set. Google client ID/secret **not set**. |
+| Secrets | `LLM_PROVIDERS=openrouter,deepseek`, `OPENROUTER_API_KEY`, `OPENROUTER_MODELS` (2 free models), `DEEPSEEK_API_KEY`, `LLM_MODEL=deepseek-flash`, `DEFAULT_TIMEZONE`. Google client ID/secret **not set**. |
 | Google Cloud (OAuth client, Calendar API) | Not configured |
 | Android app | Not created |
 | Automated tests | `deno test` in `supabase/functions`: 36 tests (contract, interface, Jarvis adapter with a mocked transport, LLM provider chain/fallback, and regression tests for `validate.ts`/`time.ts`). |
@@ -104,4 +104,4 @@ STAGE 1: luna-execute ── validate ── ExecutionInterface ──┬── 
 1. ~~No Execution contract/interface~~ → added in `_shared/execution/` (`contract.ts`, `interface.ts`). It is not yet wired into any Edge Function (Option 1: built beside the existing path).
 2. Execution (Google call) is still embedded in `luna-execute`, by decision, until ADR-011.
 3. ~~No Jarvis adapter / tests~~ → `_shared/execution/jarvis/` (adapter + transport interface, **no network transport**: D-01 deferred, Jarvis HTTP agent endpoint shape unverified) and 24 tests.
-4. The "working DeepSeek integration" the stage docs assume is deployed but **not yet proven** working.
+4. ~~LLM integration not proven~~ → `luna-intent` verified end-to-end on 2026-10-14 (OpenRouter path). The direct DeepSeek path is untested (no balance).
