@@ -59,6 +59,14 @@
 - Decision owner: Nanda
 - Date: 2026-10-15
 
+### DEC-005 — Context Projection: contract additions, slice, default exclusions
+- Status: **Accepted** (Nanda, 2026-10-15) after clarifying that `inputs` carries the already-approved interpretation (one AI interpretation, not two) and that the projector is deterministic code, not AI. Add `inputs?` + `ContextItem.source?`; slice **A**; raw utterance and personal context excluded by default.
+- Context: Workstream 2 draft in `docs/CONTEXT_PROJECTION.md`. Facts: no long-term memory store exists; the contract has no structured input field (validated args travel as prose); `ContextItem` has no source.
+- Options: contract additions `inputs?` + `ContextItem.source?` (optional, backward compatible). Slice A (pure `projectContext` + calendar policy + tests, no live change) or B (also route the live calendar call through `delegate()` with a native engine, which conflicts with ADR-011).
+- Recommendation: add both optional fields; slice **A**; raw utterance and personal context excluded by default per capability.
+- Decision owner: Nanda
+- Date: 2026-10-15
+
 ## Known deferred decisions
 > Superseded by DEC-001 (Accepted 2026-10-14): Jarvis codebase strategy = ADR-014, memory/persona = ADR-015, model fallback = ADR-016 (all in `docs/DECISIONS.md`). Only **Jarvis hosting** below is still deferred.
 ### Jarvis hosting

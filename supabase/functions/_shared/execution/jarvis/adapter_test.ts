@@ -95,6 +95,13 @@ Deno.test("jarvis: query carries only projected context, constraints and approva
   assertFalse(buildQuery(makeRequest({ approval: null, permissions: [] })).includes("Do not ask for confirmation"));
 });
 
+Deno.test("jarvis: structured inputs are sent as JSON data, not re-written as prose", () => {
+  const q = buildQuery(makeRequest({ inputs: { title: "TEST LUNA", start_datetime: "2026-10-16T16:00:00+07:00" } }));
+  assertStringIncludes(q, "Inputs (use exactly these values):");
+  assertStringIncludes(q, '"start_datetime": "2026-10-16T16:00:00+07:00"');
+  assertFalse(buildQuery(makeRequest()).includes("Inputs (use exactly"));
+});
+
 Deno.test("jarvis: long tool output is truncated in evidence", async () => {
   const transport = new MockTransport({
     content: "ok",

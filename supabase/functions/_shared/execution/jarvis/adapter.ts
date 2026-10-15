@@ -123,6 +123,10 @@ export class JarvisAdapter implements ExecutionEngine {
 // Only the explicitly projected context goes to Jarvis (ADR-008).
 export function buildQuery(request: ExecutionRequest): string {
   const lines = [`Objective: ${request.objective}`];
+  if (request.inputs && Object.keys(request.inputs).length) {
+    // Already approved by Nanda: passed as data, not prose, so nothing gets re-interpreted.
+    lines.push("Inputs (use exactly these values):", JSON.stringify(request.inputs, null, 2));
+  }
   if (request.context.length) {
     lines.push("Context:", ...request.context.map((c) => `- [${c.kind}] ${c.content}`));
   }

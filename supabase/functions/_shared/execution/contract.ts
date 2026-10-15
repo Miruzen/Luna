@@ -24,12 +24,16 @@ export interface Approval {
 export interface ContextItem {
   kind: string; // e.g. "user_request", "preference", "fact"
   content: string;
+  source?: string; // where it came from, for audits, e.g. "work_item:<id>.args" (Stage 2, DEC-005)
 }
 
 export interface ExecutionRequest {
   contract_version: typeof EXECUTION_CONTRACT_VERSION;
   request_id: string; // unique per task; lets engines make retries idempotent
   objective: string;
+  // Structured, already-validated task data (e.g. the calendar args Nanda approved). Engines use
+  // these values exactly instead of re-interpreting prose (Stage 2, DEC-005).
+  inputs?: Record<string, unknown>;
   context: ContextItem[];
   constraints: string[];
   expected_output: { description: string };
@@ -98,6 +102,11 @@ export function validateExecutionRequest(req: ExecutionRequest): string[] {
   if (!nonEmpty(req?.expected_output?.description)) errors.push("expected_output.description is required");
   if (!Array.isArray(req?.context) || req.context.some((c) => !nonEmpty(c?.kind) || typeof c?.content !== "string")) {
     errors.push("context must be a list of {kind, content}");
+  } else if (req.context.some((c) => c.source !== undefined && typeof c.source !== "string")) {
+    errors.push("context source must be a string");
+  }
+  if (req?.inputs !== undefined && (req.inputs === null || typeof req.inputs !== "object" || Array.isArray(req.inputs))) {
+    errors.push("inputs must be an object");
   }
   if (!Array.isArray(req?.constraints) || req.constraints.some((c) => typeof c !== "string")) {
     errors.push("constraints must be a list of strings");
