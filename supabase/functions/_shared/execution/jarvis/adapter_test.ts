@@ -95,6 +95,16 @@ Deno.test("jarvis: query carries only projected context, constraints and approva
   assertFalse(buildQuery(makeRequest({ approval: null, permissions: [] })).includes("Do not ask for confirmation"));
 });
 
+Deno.test("jarvis: max-turns give-up is failed (retryable), never completed", async () => {
+  const transport = new MockTransport({
+    content: "Maximum turns reached without a final answer.",
+    tool_results: [{ tool_name: "calendar_create_event", content: "partial", success: true }],
+  });
+  const res = await delegate(new JarvisAdapter({ transport, capabilityTools }), makeRequest());
+  assertEquals(res.status, "failed");
+  assertEquals(res.errors, [{ code: "engine_incomplete", message: "Jarvis stopped at its turn limit without finishing the task.", retryable: true }]);
+});
+
 Deno.test("jarvis: structured inputs are sent as JSON data, not re-written as prose", () => {
   const q = buildQuery(makeRequest({ inputs: { title: "TEST LUNA", start_datetime: "2026-10-16T16:00:00+07:00" } }));
   assertStringIncludes(q, "Inputs (use exactly these values):");

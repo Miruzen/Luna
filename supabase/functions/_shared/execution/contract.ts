@@ -29,7 +29,9 @@ export interface ContextItem {
 
 export interface ExecutionRequest {
   contract_version: typeof EXECUTION_CONTRACT_VERSION;
-  request_id: string; // unique per task; lets engines make retries idempotent
+  // Unique per work item (= work-item id). Outward actions MUST be idempotent on it: an engine may
+  // retry inside an attempt and LUNA may retry across attempts (Stage 2 F2, ADR-018).
+  request_id: string;
   objective: string;
   // Structured, already-validated task data (e.g. the calendar args Nanda approved). Engines use
   // these values exactly instead of re-interpreting prose (Stage 2, DEC-005).

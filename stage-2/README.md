@@ -4,7 +4,7 @@
 Establish a coherent operational boundary between Luna orchestration and Jarvis execution, building on verified Stage 1 artifacts.
 
 ## Status
-Planning / repository verification required.
+**Completed 2026-10-15.** Carried items: `docs/OPEN_ITEMS.md`.
 
 ## Work areas
 1. Shared State

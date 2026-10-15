@@ -67,6 +67,15 @@
 - Decision owner: Nanda
 - Date: 2026-10-15
 
+### DEC-006 — Agent/tool ownership map, verification owner, Workstream 3 slice
+- Status: **Accepted** (Nanda, 2026-10-15): map accepted (Jarvis may revise HOW, never WHAT); outcome verification owned by LUNA; slice **B**; F1–F3 approaches agreed. Permanent rules recorded as ADR-017 (verification split) and ADR-018 (outward idempotency) in `docs/DECISIONS.md` and in root `CLAUDE.md`.
+- Context: Workstream 3 draft in `docs/AGENT_TOOL_OWNERSHIP.md`, validated against LUNA code and OpenJarvis @ `c14f579`.
+- Findings: F1, no generic result verification in Jarvis agents (refines Stage 1 decision 8); F2, two retry layers (Jarvis in-attempt ×3, LUNA across attempts), so outward tools must be idempotent on `request_id`; F3, the adapter maps Jarvis "max turns reached" to `completed`.
+- Options: A docs only; B docs + F3 fix + test + F2 rule recorded; C B + LUNA acceptance check (F1).
+- Recommendation: accept the map ("Jarvis may revise HOW, never WHAT"); outcome verification = LUNA acceptance check (done with ADR-011); slice **B**.
+- Decision owner: Nanda
+- Date: 2026-10-15
+
 ## Known deferred decisions
 > Superseded by DEC-001 (Accepted 2026-10-14): Jarvis codebase strategy = ADR-014, memory/persona = ADR-015, model fallback = ADR-016 (all in `docs/DECISIONS.md`). Only **Jarvis hosting** below is still deferred.
 ### Jarvis hosting

@@ -58,7 +58,7 @@ Production integration, hosting choice, fork/upstream choice, model fallback, fu
 - [x] Stage 1 artifacts inspected (2026-10-14, see docs/ARCHITECTURE_NOTES.md)
 - [x] Shared State design reviewed (2026-10-15, DEC-003)
 - [x] Context Projection design reviewed and implemented (2026-10-15, DEC-005 option A)
-- [ ] Ownership boundaries reviewed
+- [x] Ownership boundaries reviewed (2026-10-15, DEC-006)
 - [x] Nanda-approved implementation slice recorded (Workstream 1: DEC-003 option B)
-- [ ] Tests added/updated and run
-- [ ] Progress and decision log updated
+- [x] Tests added/updated and run (62 passed, 0 failed on 2026-10-15)
+- [x] Progress and decision log updated

@@ -22,6 +22,8 @@ Statuses: **ACCEPTED** (in force) · **ACCEPTED (deferred)** (decided, not yet i
 | ADR-014 | Codebase strategy: **fork-first**. LUNA carries its own fork of OpenJarvis; upstream contributions are optional. A weekly upstream review decides which new Jarvis changes to adopt. Layout: git subtree in a dedicated Jarvis folder inside the LUNA repo. | ACCEPTED | 2026-10-13 |
 | ADR-015 | Jarvis' own memory and persona are **disabled** when used by LUNA. Re-evaluate 2–3 months after LUNA has more systems running (target review: 2027-01) | ACCEPTED (provisional) | 2026-10-13 |
 | ADR-016 | LLM access uses **OpenRouter as one path, never the only one**: LUNA keeps a provider fallback chain (e.g. OpenRouter → DeepSeek direct) so an OpenRouter outage does not stop LUNA. Applies to LUNA now and to Jarvis later. Resolves D-03. | ACCEPTED (implemented in code 2026-10-14; not deployed) | 2026-10-13 |
+| ADR-017 | Execution verification is split: the execution layer checks that each tool call succeeded; **LUNA accepts the outcome** (does it match what Nanda approved?). Refines Stage 1 locked decision 8 after OpenJarvis showed no generic verification step (Stage 2 F1, DEC-006) | ACCEPTED | 2026-10-15 |
+| ADR-018 | Every outward action must be **idempotent on the work-item id** (`request_id`), because the engine may retry inside an attempt and LUNA may retry across attempts (Stage 2 F2, DEC-006) | ACCEPTED | 2026-10-15 |
 
 ### ADR-013 notes
 - The execution layer must not re-prompt for approval and must not remember approvals of its own (cf. Jarvis `approval_store` "always approve", recon F6). An escalation (`needs_approval`) happens only when a task needs something **outside** the permissions LUNA granted.
@@ -52,6 +54,7 @@ If Jarvis is removed tomorrow, LUNA's strategic core must remain conceptually in
 - Context: OpenJarvis' Google Calendar support is read-only (+ accept/decline). It cannot create events (recon F1).
 - Options considered: A) keep calendar in LUNA as a native adapter; B) add create-event to Jarvis; C) Jarvis + external Calendar MCP server.
 - Not implemented yet. It depends on D-01 (hosting), D-02 (fork vs upstream) and D-03 (model/tool-calling). Until then, LUNA's existing `luna-execute` calendar path stays as-is.
+- Requirements added in Stage 2 (DEC-006): the Jarvis create-event tool must use `request_id` as the Google event id (ADR-018), must not require its own confirmation (ADR-013), and must return the created event's start/end so LUNA can run its acceptance check (ADR-017).
 
 ## Deferred decisions
 

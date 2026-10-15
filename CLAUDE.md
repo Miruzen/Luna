@@ -17,7 +17,8 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 
 ## Architectural boundaries
 - **LUNA owns WHO / WHY / WHAT:** identity, user relationship, intent, context, mission, desired outcome, delegation, constraints, permissions, strategic evaluation.
-- **The execution layer owns HOW:** execution planning, execution agents, agent coordination, tool/MCP use, retries, workers, execution verification.
+- **The execution layer owns HOW:** execution planning, execution agents, agent coordination, tool/MCP use, in-attempt retries, workers, tool-level verification. It may revise *how* freely, never *what* (inputs, permissions, conflicting instructions): those escalate.
+- **LUNA accepts outcomes:** it checks that a result matches what Nanda approved (ADR-017) and owns retries across attempts.
 - LUNA delegates only through the engine-agnostic **Execution Interface**. LUNA core never depends on Jarvis-specific internals; anything Jarvis-specific lives in the Jarvis adapter.
 - Invariant: if Jarvis is removed tomorrow, LUNA's strategic core stays intact. Only the implementation behind the Execution Interface is replaced.
 - Execution agents never automatically receive all LUNA memory.
@@ -28,6 +29,7 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 - Secrets (LLM keys, OAuth client secrets, refresh tokens, service-role keys) live server-side only, in Supabase Edge Function secrets. Never in a client app, never in git.
 - The LLM only proposes structured actions. The backend validates them; the LLM never executes anything directly.
 - Outward-facing actions (creating events, sending messages, …) run only after explicit user confirmation, given per action. LUNA owns that confirmation; never rely on the execution layer's "always approve" memory.
+- Outward-facing actions must be idempotent on the work-item id (`request_id`), so a retry can never perform the action twice (ADR-018).
 - The LLM provider stays swappable: provider-specific code lives only in `supabase/functions/_shared/llm/`.
 - Always inject the current local datetime and timezone (`DEFAULT_TIMEZONE`, default `Asia/Jakarta`) into LLM prompts.
 
@@ -37,6 +39,7 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 - Inspect actual source (LUNA's and Jarvis') before modifying or integrating it. Never integrate a component just because documentation says it exists.
 - Do not copy or merge Jarvis code into LUNA unless Nanda explicitly authorizes it. (Authorized layout for later: a git subtree in a dedicated Jarvis folder, ADR-014. Adding it still needs a go-ahead.) LUNA code never imports from the Jarvis folder.
 - Do not build speculative future-stage architecture.
+- At the start of every stage, raise the open items in `docs/OPEN_ITEMS.md` with Nanda. Items stay there until he decides.
 - Deferred decisions stay deferred (see `docs/DECISIONS.md`). If one blocks a task, explain why and propose the smallest reversible step.
 - Claude is the engineering executor, not the final architecture owner. When findings conflict with a recorded decision, do not silently change the architecture. Report: finding → evidence → impact → options → recommendation → whether the stage must change.
 
@@ -45,9 +48,11 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 - `android-app/` — client app (paused; voice/mobile are out of Stage 1 scope)
 - `docs/architecture/` — architecture docs and reconnaissance reports
 - `docs/DECISIONS.md` — decision log (accepted and deferred decisions)
-- `STAGE_<n>/` — stage-specific instructions and scope
+- `docs/OPEN_ITEMS.md` — reminders carried across stages until decided
+- `STAGE_1/`, `stage-2/` — stage-specific instructions, scope and progress
 
-## Current stage: Stage 2 (started 2026-10-14)
+## Current stage: Stage 2 (completed 2026-10-15) — Stage 3 not yet defined
+Stage 2 rules stay in force until Stage 3 instructions exist. Open items to raise first: `docs/OPEN_ITEMS.md`.
 Source of truth for Stage 2 is the `stage-2/` folder. Read in this order: `stage-2/CLAUDE_STAGE_2_START_HERE.md` → `stage-2/STAGE_2_PLAN.md` → `stage-2/STAGE_2_PROGRESS.md`; `stage-2/docs/` are the design guides.
 Record every Stage 2 decision and progress step in `stage-2/STAGE_2_PROGRESS.md` (and `stage-2/docs/DECISIONS.md`), so work can be backtracked or redone.
 @stage-2/CLAUDE_STAGE_2_START_HERE.md

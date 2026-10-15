@@ -15,6 +15,9 @@ import type { JarvisRunOutput, JarvisTransport } from "./transport.ts";
 // Jarvis' ToolExecutor refuses confirmation-gated tools when no interactive callback exists
 // (OpenJarvis @ c14f579, src/openjarvis/tools/_stubs.py:400-410).
 const JARVIS_CONFIRMATION_REFUSAL = "requires confirmation but no confirmation callback is available";
+// Jarvis gives up after max_turns with this fixed text; ask_full() drops the max_turns_exceeded flag
+// (OpenJarvis @ c14f579, src/openjarvis/agents/_stubs.py:313-330, sdk.py:585-599). Stage 2 F3.
+const JARVIS_MAX_TURNS = "Maximum turns reached without a final answer.";
 const EVIDENCE_MAX_CHARS = 500;
 
 export interface JarvisAdapterConfig {
@@ -91,6 +94,15 @@ export class JarvisAdapter implements ExecutionEngine {
         message: `${t.tool_name}: ${truncate(t.content)}`,
         retryable: false, // outward actions are not blindly retried
       })), null);
+    }
+
+    // An unfinished run must never be reported as done (Stage 2, F3).
+    if ((output?.content ?? "").trim() === JARVIS_MAX_TURNS) {
+      return this.result(request, "failed", null, evidence, actions, [{
+        code: "engine_incomplete",
+        message: "Jarvis stopped at its turn limit without finishing the task.",
+        retryable: true,
+      }], "Retry, or simplify the task.");
     }
 
     return this.result(request, "completed", output?.content ?? "", evidence, actions, [], null);
