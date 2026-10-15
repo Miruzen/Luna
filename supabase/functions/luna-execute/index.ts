@@ -2,11 +2,13 @@
 // Executes the args stored server-side when the proposal was made (what Nanda was shown),
 // never args sent by the client. State moves through the work-item lifecycle
 // (stage-2/docs/STATE_OWNERSHIP.md): proposed -> approved -> dispatched -> completed | failed.
+import { checkCalendarOutcome } from "../_shared/calendar/acceptance.ts";
 import { validateEventArgs } from "../_shared/calendar/validate.ts";
+import { config } from "../_shared/config.ts";
 import { createCalendarEvent, GoogleReauthRequired, refreshAccessToken } from "../_shared/calendar/googleCalendarClient.ts";
 import { adminClient, json, readJson, requireUser } from "../_shared/http.ts";
 import { applyEvent, loadWorkItem } from "../_shared/state/store.ts";
-import { effectiveStatus, type WorkItemEvent } from "../_shared/state/workItem.ts";
+import { effectiveStatus, isDispatchStale, type WorkItemEvent } from "../_shared/state/workItem.ts";
 import type { ExecuteResult } from "../_shared/types.ts";
 
 const CONFIRMATION_ID = /^[0-9a-v]{5,1024}$/;
@@ -36,7 +38,20 @@ Deno.serve(async (req) => {
     const { retryable: _r, detail: _d, ...stored } = item.last_result ?? {};
     return json(stored as ExecuteResult);
   }
-  if (item.status === "dispatched") return json({ ok: false, error: "in_progress" } satisfies ExecuteResult, 409);
+  if (item.status === "dispatched") {
+    // Still within the longest possible execution: genuinely in progress.
+    if (!isDispatchStale(item, new Date(), config.dispatchTimeoutSeconds * 1000)) {
+      return json({ ok: false, error: "in_progress" } satisfies ExecuteResult, 409);
+    }
+    // Older than any execution can run: the previous run died. Mark it failed (retryable) and
+    // fall through to a retry with the same id, which cannot duplicate the action (OI-1, ADR-018).
+    const t = await applyEvent(admin, item, { type: "timeout" }, {
+      lastResult: { ok: false, error: "timeout", retryable: true, detail: `dispatched at ${item.updated_at}, no result` },
+      note: "dispatch timeout",
+    });
+    if (!t.ok) return json({ ok: false, error: "in_progress", details: [t.error] } satisfies ExecuteResult, 409);
+    item = t.item;
+  }
 
   // Defense in depth: stored args were validated at proposal time; check again.
   const v = validateEventArgs(item.args);
@@ -77,7 +92,15 @@ Deno.serve(async (req) => {
     // Google event id = work item id: a repeated insert returns the existing event.
     const event = await createCalendarEvent(accessToken, item.id, args);
     alreadyExisted = !event.created;
-    result = { ok: true, event_id: event.id, html_link: event.htmlLink };
+    // LUNA accepts the outcome only if the event matches what Nanda approved (ADR-017, OI-2).
+    const mismatches = checkCalendarOutcome(args, event);
+    if (mismatches.length) {
+      console.error("acceptance failed", item.id, mismatches);
+      result = { ok: false, error: "acceptance_failed", details: mismatches, event_id: event.id, html_link: event.htmlLink };
+      status = 502;
+    } else {
+      result = { ok: true, event_id: event.id, html_link: event.htmlLink };
+    }
   } catch (e) {
     console.error(e);
     errorDetail = String(e).slice(0, 1000);
@@ -87,8 +110,9 @@ Deno.serve(async (req) => {
     status = e instanceof GoogleReauthRequired ? 409 : 502;
   }
 
-  // Both failures can succeed later (after reconnecting Google, or a transient Google error).
-  const retryable = !result.ok;
+  // Google errors can succeed later (reconnect, transient). A wrong event cannot be fixed by retrying:
+  // the same id would return the same event.
+  const retryable = !result.ok && result.error !== "acceptance_failed";
   const recorded = await applyEvent(
     admin,
     item,

@@ -5,7 +5,7 @@ import type { ChatMessage } from "../_shared/llm/provider.ts";
 import { validateEventArgs } from "../_shared/calendar/validate.ts";
 import { adminClient, json, readJson, requireUser } from "../_shared/http.ts";
 import { createProposal } from "../_shared/state/store.ts";
-import { formatRange, localNow } from "../_shared/time.ts";
+import { annotateRelativeDays, formatRange, localNow, relativeDateTable } from "../_shared/time.ts";
 import type { IntentResult } from "../_shared/types.ts";
 
 // Reuses the caller's session if it is theirs (RLS), otherwise starts a new one.
@@ -65,9 +65,12 @@ Deno.serve(async (req) => {
     const tz = config.defaultTimezone;
 
     const result = await createProvider().extractCalendarIntent({
-      userText: text,
+      // OI-3: relative-day words get their exact date from code, plus a computed date table,
+      // so the (free) model looks dates up instead of counting. Turns store the original text.
+      userText: annotateRelativeDays(text, tz),
       nowLocal: localNow(tz),
       timezone: tz,
+      calendarHints: relativeDateTable(tz),
       history,
     });
     sw.lap("llm");

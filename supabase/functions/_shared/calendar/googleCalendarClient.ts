@@ -51,7 +51,7 @@ export async function createCalendarEvent(
   accessToken: string,
   eventId: string,
   args: CreateCalendarEventArgs,
-): Promise<{ id: string; htmlLink: string; created: boolean }> {
+): Promise<{ id: string; htmlLink: string; created: boolean; summary?: string; start?: string; end?: string }> {
   const base = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
   const headers = { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" };
   const sendUpdates = args.attendees?.length ? "all" : "none";
@@ -73,11 +73,15 @@ export async function createCalendarEvent(
     const existing = await fetch(`${base}/${eventId}`, { headers });
     if (existing.ok) {
       const e = await existing.json();
-      return { id: e.id, htmlLink: e.htmlLink, created: false }; // retry of an already-created event
+      return { ...eventFields(e), created: false }; // retry of an already-created event
     }
   }
   if (res.status === 401) throw new GoogleReauthRequired(await res.text());
   if (!res.ok) throw new Error(`Google Calendar error ${res.status}: ${await res.text()}`);
   const e = await res.json();
-  return { id: e.id, htmlLink: e.htmlLink, created: true };
+  return { ...eventFields(e), created: true };
 }
+
+// Fields LUNA needs for its acceptance check (ADR-017).
+// deno-lint-ignore no-explicit-any
+const eventFields = (e: any) => ({ id: e.id, htmlLink: e.htmlLink, summary: e.summary, start: e.start?.dateTime, end: e.end?.dateTime });

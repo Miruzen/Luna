@@ -7,6 +7,7 @@ export interface IntentInput {
   userText: string;
   nowLocal: string; // e.g. "2026-09-29T14:03:00+07:00 (Tuesday)"
   timezone: string;
+  calendarHints?: string; // pre-computed date table (time.ts relativeDateTable), OI-3
   history: ChatMessage[];
 }
 

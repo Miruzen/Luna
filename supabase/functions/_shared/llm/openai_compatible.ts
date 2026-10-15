@@ -50,7 +50,10 @@ export class OpenAICompatibleProvider implements LLMProvider {
       `If the date or start time is missing or ambiguous, ask ONE short clarifying question instead of calling the tool. ` +
       `If no title is given, derive a short one from the request. If duration is missing, use 1 hour. ` +
       `Never invent attendee emails. If the request is not about scheduling, briefly say you can only schedule events. ` +
-      `Reply in the same language as the user.`;
+      `Reply in the same language as the user.` +
+      (input.calendarHints ? `
+
+${input.calendarHints}` : "");
 
     const res = await (this.cfg.fetchFn ?? fetch)(`${this.cfg.baseUrl}/chat/completions`, {
       method: "POST",

@@ -16,6 +16,7 @@ export interface WorkItemState {
   attempt: number; // 0 until first dispatch; +1 on every dispatch
   expires_at: string; // ISO; only meaningful while `proposed`
   last_retryable?: boolean; // from the last failed result: may it be retried?
+  updated_at?: string; // ISO; time of the last transition (for dispatched: when it was sent)
 }
 
 export type WorkItemEvent =
@@ -25,6 +26,7 @@ export type WorkItemEvent =
   | { type: "dispatch" } // LUNA hands it to an engine (attempt + 1)
   | { type: "retry" } // LUNA re-dispatches a retryable failure (attempt + 1)
   | { type: "provide_input" } // LUNA re-dispatches with the missing input (attempt + 1)
+  | { type: "timeout" } // LUNA: dispatched for longer than any execution can run (OI-1)
   | { type: "result"; status: ExecutionStatus; attempt: number; retryable: boolean };
 
 export const EVENT_ACTOR: Record<WorkItemEvent["type"], Actor> = {
@@ -34,6 +36,7 @@ export const EVENT_ACTOR: Record<WorkItemEvent["type"], Actor> = {
   dispatch: "luna",
   retry: "luna",
   provide_input: "luna",
+  timeout: "luna",
   result: "engine",
 };
 
@@ -50,6 +53,12 @@ export const isTerminal = (s: WorkItemState) =>
 // A proposal past its TTL is expired even if storage still says "proposed".
 export function effectiveStatus(s: WorkItemState, now: Date): WorkItemStatus {
   return s.status === "proposed" && now.getTime() >= Date.parse(s.expires_at) ? "expired" : s.status;
+}
+
+// A dispatched item older than the longest possible execution cannot still be running
+// (the Edge Function would have been killed). OI-1, docs/OPEN_ITEMS.md.
+export function isDispatchStale(s: WorkItemState, now: Date, timeoutMs: number): boolean {
+  return s.status === "dispatched" && !!s.updated_at && now.getTime() - Date.parse(s.updated_at) > timeoutMs;
 }
 
 export function transition(s: WorkItemState, e: WorkItemEvent, now: Date): TransitionOutcome {
@@ -83,6 +92,11 @@ export function transition(s: WorkItemState, e: WorkItemEvent, now: Date): Trans
 
     case "provide_input":
       return status === "needs_input" ? to("dispatched", s.attempt + 1) : { ok: false, error: "invalid_transition" };
+
+    case "timeout":
+      // Retryable because outward actions are idempotent on the work-item id (ADR-018):
+      // re-dispatching cannot perform the action twice.
+      return status === "dispatched" ? to("failed", s.attempt, { last_retryable: true }) : { ok: false, error: "invalid_transition" };
 
     case "result":
       // Only the current attempt of a dispatched item may report; anything else is late/duplicate.

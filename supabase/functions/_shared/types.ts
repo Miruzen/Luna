@@ -30,6 +30,9 @@ export type ExecuteResult =
       | "not_found" // no such proposal for this user
       | "expired" // confirmed after the proposal TTL
       | "in_progress" // already being executed (or a concurrent confirm won)
-      | "not_executable"; // cancelled, rejected or a non-retryable failure
+      | "not_executable" // cancelled, rejected or a non-retryable failure
+      | "acceptance_failed"; // event exists but does not match what Nanda approved (ADR-017)
     details?: string[];
+    event_id?: string; // set for acceptance_failed, so Nanda can inspect or delete the event
+    html_link?: string;
   };

@@ -2,7 +2,7 @@
 
 Status: **Implemented (option B) and verified live on 2026-10-15** (DEC-003). Code: `supabase/functions/_shared/state/` (`workItem.ts` = rules, `store.ts` = persistence). Migrations: `20261015000000_work_items.sql`, `20261015000100_fix_work_item_id_check.sql`. The §1 gaps are closed: `luna-execute` now runs the stored args, and proposals expire after 15 min.
 
-Known limitation: an item stuck in `dispatched` (e.g. the function crashed mid-call) currently answers `in_progress` forever. Timeout recovery (§3) is not implemented yet.
+Update 2026-10-15 (OI-1): timeout recovery is implemented. A `dispatched` item older than 150 s (the Free-plan function limit) becomes `failed` (retryable, `timeout`) and is retried with the same id on the next confirm.
 Labels: **[FACT]** verified in code/live · **[PROPOSAL]** recommendation · **[OPEN]** needs a decision.
 
 ## 1. Current state

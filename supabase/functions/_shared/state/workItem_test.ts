@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { effectiveStatus, isTerminal, transition, type WorkItemEvent, type WorkItemState } from "./workItem.ts";
+import { effectiveStatus, isDispatchStale, isTerminal, transition, type WorkItemEvent, type WorkItemState } from "./workItem.ts";
 
 const NOW = new Date("2026-10-15T10:00:00+07:00");
 const FUTURE = "2026-10-15T10:15:00+07:00";
@@ -93,4 +93,23 @@ Deno.test("state: any non-terminal item can be cancelled by Nanda", () => {
   for (const status of ["proposed", "approved", "dispatched", "needs_approval", "needs_input"] as const) {
     assertEquals(transition(item({ status, attempt: 1 }), { type: "cancel" }, NOW).ok, true);
   }
+});
+
+Deno.test("state: dispatched item older than the execution limit is stale (OI-1)", () => {
+  const sent = item({ status: "dispatched", attempt: 1, updated_at: "2026-10-15T09:57:00+07:00" }); // 3 min ago
+  assertEquals(isDispatchStale(sent, NOW, 150_000), true);
+  assertEquals(isDispatchStale({ ...sent, updated_at: "2026-10-15T09:59:00+07:00" }, NOW, 150_000), false); // 1 min ago
+  assertEquals(isDispatchStale(item({ status: "approved", updated_at: "2026-10-15T09:00:00+07:00" }), NOW, 150_000), false);
+});
+
+Deno.test("state: timeout turns a stuck dispatch into a retryable failure, then retry re-dispatches", () => {
+  const sent = item({ status: "dispatched", attempt: 1 });
+  const failed = run(sent, [{ type: "timeout" }]);
+  assertEquals([failed.status, failed.last_retryable], ["failed", true]);
+  const again = run(failed, [{ type: "retry" }]);
+  assertEquals([again.status, again.attempt], ["dispatched", 2]);
+});
+
+Deno.test("state: timeout is only valid for dispatched items", () => {
+  assertEquals(transition(item(), { type: "timeout" }, NOW), { ok: false, error: "invalid_transition" });
 });
