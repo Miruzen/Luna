@@ -39,7 +39,7 @@ External: DeepSeek API · Google OAuth · Google Calendar API
    - It re-validates `args` and never trusts the client.
    - It loads the refresh token with the service role.
    - `refreshAccessToken` → `createCalendarEvent(eventId = confirmation_id)`. A retry is idempotent: a 409 makes it fetch the existing event.
-   - It writes `calendar_events_log` (confirmed/failed) and an outcome turn, then returns `{ok, event_id, html_link}` or a typed error (`google_not_connected`, `google_reauth_required`, `invalid_args`, `calendar_error`).
+   - It records the outcome in `work_items`/`work_item_events` (Stage 2; `calendar_events_log` was dropped 2026-10-15) and an outcome turn, then returns `{ok, event_id, html_link}` or a typed error (`google_not_connected`, `google_reauth_required`, `invalid_args`, `calendar_error`).
 4. **Google connect (one-time)** — `POST auth-google-exchange {code}` exchanges the code server-side. It checks that the `calendar.events` scope was granted and upserts `user_google_tokens`.
 
 ## 3. Module map and ownership (against the Stage 1 model)
@@ -55,7 +55,7 @@ External: DeepSeek API · Google OAuth · Google Calendar API
 | `_shared/calendar/googleCalendarClient.ts` | Google OAuth refresh + event insert | **Execution layer** (ADR-006) | Today it runs inside LUNA. ADR-011 moves it to Jarvis later (deferred). |
 | `auth-google-exchange/index.ts` | Stores Google credentials | **LUNA** (ADR-013) | Credentials stay in Supabase. How they reach Jarvis at execution time is still open (ADR-013 notes). |
 | `conversation_sessions/turns` | Short conversation context | **LUNA** (context) | Not long-term memory |
-| `calendar_events_log` | Record of executed actions | **Shared state** (future stage) | Detailed Shared State is out of Stage 1 scope |
+| `work_items`, `work_item_events` | Work-item state + transition audit trail (Stage 2) | **LUNA** (single writer) | Replaced `calendar_events_log` (dropped 2026-10-15) |
 
 ## 4. Where the Execution Interface will cut in
 
@@ -75,7 +75,8 @@ STAGE 1: luna-execute ── validate ── ExecutionInterface ──┬── 
 | `user_google_tokens` | service role only (RLS, no policies, by design) | Google refresh token per user |
 | `conversation_sessions` | own rows (RLS) | Conversation container |
 | `conversation_turns` | own sessions (RLS) | user/assistant turns, last 10 loaded |
-| `calendar_events_log` | user can read own; written by service role | Execution log |
+| `work_items` | user can read own; written by service role | Current state of each proposed/executed action (Stage 2) |
+| `work_item_events` | user can read own; written by service role | Append-only transition history (Stage 2) |
 
 ## 6. Deployment and verification state
 

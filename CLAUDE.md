@@ -47,10 +47,12 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 - `docs/DECISIONS.md` — decision log (accepted and deferred decisions)
 - `STAGE_<n>/` — stage-specific instructions and scope
 
-## Current stage: Stage 1 (completed 2026-10-14)
-Stage 1 rules stay in force until Stage 2 instructions exist.
-@STAGE_1/CLAUDE_STAGE_1.md
-Scope and stop conditions: `STAGE_1/IMPLEMENTATION_SCOPE.md`
+## Current stage: Stage 2 (started 2026-10-14)
+Source of truth for Stage 2 is the `stage-2/` folder. Read in this order: `stage-2/CLAUDE_STAGE_2_START_HERE.md` → `stage-2/STAGE_2_PLAN.md` → `stage-2/STAGE_2_PROGRESS.md`; `stage-2/docs/` are the design guides.
+Record every Stage 2 decision and progress step in `stage-2/STAGE_2_PROGRESS.md` (and `stage-2/docs/DECISIONS.md`), so work can be backtracked or redone.
+@stage-2/CLAUDE_STAGE_2_START_HERE.md
+
+Stage 1 (completed 2026-10-14): `STAGE_1/CLAUDE_STAGE_1.md`.
 
 ## Working style
 - Explain trade-offs before big changes. Ask before anything irreversible.

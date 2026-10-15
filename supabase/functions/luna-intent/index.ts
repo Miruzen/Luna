@@ -3,7 +3,8 @@ import { config } from "../_shared/config.ts";
 import { createProvider } from "../_shared/llm/factory.ts";
 import type { ChatMessage } from "../_shared/llm/provider.ts";
 import { validateEventArgs } from "../_shared/calendar/validate.ts";
-import { json, readJson, requireUser } from "../_shared/http.ts";
+import { adminClient, json, readJson, requireUser } from "../_shared/http.ts";
+import { createProposal } from "../_shared/state/store.ts";
 import { formatRange, localNow } from "../_shared/time.ts";
 import type { IntentResult } from "../_shared/types.ts";
 
@@ -79,6 +80,16 @@ Deno.serve(async (req) => {
         const summary = `${v.args.title} — ${formatRange(v.args.start_datetime, v.args.end_datetime, v.args.timezone)}`;
         // Google event ids must be base32hex; a dash-less UUID (0-9a-f) qualifies.
         const confirmationId = crypto.randomUUID().replaceAll("-", "");
+        // Store exactly what Nanda will see; luna-execute runs these args, not client-sent ones.
+        await createProposal(adminClient(), {
+          id: confirmationId,
+          userId: user.id,
+          sessionId,
+          capability: "calendar.events.create",
+          args: v.args,
+          summary,
+          ttlMinutes: config.proposalTtlMinutes,
+        });
         out = { kind: "confirm", session_id: sessionId, confirmation_id: confirmationId, args: v.args, summary };
         assistantTurn = `Proposed event (awaiting user confirmation): ${JSON.stringify(v.args)}`;
       } else {

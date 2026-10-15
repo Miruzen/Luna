@@ -12,13 +12,24 @@ export type IntentResult =
   | { kind: "clarification"; session_id: string; question: string }
   | { kind: "confirm"; session_id: string; confirmation_id: string; args: CreateCalendarEventArgs; summary: string };
 
-// luna-execute request / response.
+// luna-execute request / response. Only the id is sent: the server executes the args it
+// stored when the proposal was made (Stage 2, work items). Client-sent args are ignored.
 export interface ExecuteRequest {
-  confirmation_id: string; // from the confirm result; makes retries idempotent
-  args: CreateCalendarEventArgs;
-  session_id?: string;
+  confirmation_id: string; // = work item id; makes retries idempotent
 }
 
 export type ExecuteResult =
   | { ok: true; event_id: string; html_link: string }
-  | { ok: false; error: "invalid_args" | "google_not_connected" | "google_reauth_required" | "calendar_error"; details?: string[] };
+  | {
+    ok: false;
+    error:
+      | "invalid_args"
+      | "google_not_connected"
+      | "google_reauth_required"
+      | "calendar_error"
+      | "not_found" // no such proposal for this user
+      | "expired" // confirmed after the proposal TTL
+      | "in_progress" // already being executed (or a concurrent confirm won)
+      | "not_executable"; // cancelled, rejected or a non-retryable failure
+    details?: string[];
+  };
