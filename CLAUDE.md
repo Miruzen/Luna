@@ -50,15 +50,16 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 - `docs/architecture/` — architecture docs and reconnaissance reports
 - `docs/DECISIONS.md` — decision log (accepted and deferred decisions)
 - `docs/OPEN_ITEMS.md` — reminders carried across stages until decided
-- `STAGE_1/`, `stage-2/` — stage-specific instructions, scope and progress
+- `Stage/` — one folder per stage (`stage-1/`, `stage-2/`, `stage-3/`, …): instructions, scope, decisions and progress
 
-## Current stage: Stage 2 extension — web client (DEC-007); Stage 3 being written by Nanda
-Stage 2 rules stay in force until Stage 3 instructions exist. Open items to raise first: `docs/OPEN_ITEMS.md`.
-Source of truth for Stage 2 is the `stage-2/` folder. Read in this order: `stage-2/CLAUDE_STAGE_2_START_HERE.md` → `stage-2/STAGE_2_PLAN.md` → `stage-2/STAGE_2_PROGRESS.md`; `stage-2/docs/` are the design guides.
-Record every Stage 2 decision and progress step in `stage-2/STAGE_2_PROGRESS.md` (and `stage-2/docs/DECISIONS.md`), so work can be backtracked or redone.
-@stage-2/CLAUDE_STAGE_2_START_HERE.md
+## Current stage: Stage 3 — LUNA Readiness (3.1) → Real Jarvis Integration (3.2)
+Source of truth: `Stage/stage-3/`. Read `Stage/stage-3/STAGE_3_PLAN.md` → `Stage/stage-3/STAGE_3_PROGRESS.md`.
+Stage 3.1 comes first. Do not start Stage 3.2 implementation until Stage 3.1 has passed its acceptance gate.
+Record every Stage 3 decision and progress step in `Stage/stage-3/STAGE_3_PROGRESS.md` (decisions as DEC-3xx in its decision section; permanent ones also as ADRs in `docs/DECISIONS.md`), so work can be backtracked or redone.
+Open items to raise first: `docs/OPEN_ITEMS.md`.
+@Stage/stage-3/STAGE_3_PLAN.md
 
-Stage 1 (completed 2026-10-14): `STAGE_1/CLAUDE_STAGE_1.md`.
+Earlier stages: Stage 1 (completed 2026-10-14) `Stage/stage-1/`; Stage 2 incl. web client extension (completed 2026-10-15) `Stage/stage-2/`, summary in `Stage/stage-2/STAGE_2_SUMMARY_FOR_STAGE_3.md`.
 
 ## Working style
 - Explain trade-offs before big changes. Ask before anything irreversible.

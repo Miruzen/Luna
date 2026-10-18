@@ -1,7 +1,7 @@
 // Runs ONLY after the user explicitly confirms in the app.
 // Executes the args stored server-side when the proposal was made (what Nanda was shown),
 // never args sent by the client. State moves through the work-item lifecycle
-// (stage-2/docs/STATE_OWNERSHIP.md): proposed -> approved -> dispatched -> completed | failed.
+// (Stage/stage-2/docs/STATE_OWNERSHIP.md): proposed -> approved -> dispatched -> completed | failed.
 import { checkCalendarOutcome } from "../_shared/calendar/acceptance.ts";
 import { validateEventArgs } from "../_shared/calendar/validate.ts";
 import { config } from "../_shared/config.ts";

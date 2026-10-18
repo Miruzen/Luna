@@ -2,11 +2,11 @@
 
 Nanda's personal AI. LUNA is the center: it owns identity, context, intent and delegation. Execution is delegated to an execution layer (currently planned: [OpenJarvis](https://github.com/open-jarvis/OpenJarvis)) through an engine-agnostic Execution Interface. Results flow back to LUNA.
 
-Current state: a V0.1 backend (partly deployed, not yet verified end-to-end) ("Luna, schedule this for me" → Google Calendar) plus **Stage 1**, which builds the execution boundary and Jarvis reconnaissance. See `CLAUDE.md` for the rules.
+Current state: Stages 1–2 complete (execution boundary, shared work-item state, context projection, web client). Active: **Stage 3** (`Stage/stage-3/`). See `CLAUDE.md` for the rules.
 
 ## Docs
 - `CLAUDE.md` — permanent project rules (architecture boundaries, safety, workflow)
-- `STAGE_1/CLAUDE_STAGE_1.md` — active stage instructions; `STAGE_1/IMPLEMENTATION_SCOPE.md` — scope and stop conditions
+- `Stage/` — per-stage instructions, plans, decisions and progress (`stage-1/`, `stage-2/`, `stage-3/`, …)
 - `docs/architecture/ARCHITECTURE.md` — target architecture (LUNA ↔ execution layer)
 - `docs/architecture/JARVIS_REPOSITORY_RECON_STAGE_1.md` — OpenJarvis source reconnaissance
 - `docs/DECISIONS.md` — decision log (accepted and deferred)
@@ -15,7 +15,8 @@ Current state: a V0.1 backend (partly deployed, not yet verified end-to-end) ("L
 ## Layout
 - `supabase/` — migrations + Edge Functions (Deno/TypeScript): LLM intent, validation, Google Calendar
 - `android-app/` — Kotlin + Jetpack Compose client (paused during Stage 1; see its README)
-- `docs/`, `STAGE_1/` — documentation and stage instructions
+- `web/` — web client (Vite + React + TypeScript)
+- `docs/`, `Stage/` — documentation and stage instructions
 
 ## Backend setup (Supabase)
 Prerequisites: Supabase CLI (logged in), Deno (for `deno check` / tests).

@@ -1,6 +1,6 @@
 // Context Projection (Stage 2, Workstream 2). Deterministic code, not AI: it never interprets
 // anything. It copies the already-approved inputs and keeps only the context a capability's
-// policy allows (default deny). Design: stage-2/docs/CONTEXT_PROJECTION.md.
+// policy allows (default deny). Design: Stage/stage-2/docs/CONTEXT_PROJECTION.md.
 import {
   type Approval,
   type ContextItem,

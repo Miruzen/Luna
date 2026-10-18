@@ -1,5 +1,5 @@
 // Work-item lifecycle (Stage 2, Workstream 1). Pure logic: no I/O, no Deno APIs.
-// Design and rationale: stage-2/docs/STATE_OWNERSHIP.md. LUNA's backend is the only writer;
+// Design and rationale: Stage/stage-2/docs/STATE_OWNERSHIP.md. LUNA's backend is the only writer;
 // Nanda and execution engines only *request* transitions, validated here.
 import type { ExecutionStatus } from "../execution/contract.ts";
 

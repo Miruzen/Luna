@@ -8,7 +8,7 @@ Keep verified facts, proposals, and assumptions separate.
   - Target architecture: `docs/architecture/ARCHITECTURE.md`
   - Jarvis recon: `docs/architecture/JARVIS_REPOSITORY_RECON_STAGE_1.md` (OpenJarvis @ `c14f579`)
   - Project-wide decision log: `docs/DECISIONS.md` (ADR-001…016, D-01…D-04)
-  - Stage 1 instructions and closure: `STAGE_1/CLAUDE_STAGE_1.md`
+  - Stage 1 instructions and closure: `Stage/stage-1/CLAUDE_STAGE_1.md`
 - **Existing contracts** (`supabase/functions/_shared/execution/contract.ts`):
   - `ExecutionRequest`: `contract_version`, `request_id`, `objective`, `context: ContextItem[] {kind, content}`, `constraints: string[]`, `expected_output {description}`, `permissions: Permission[] {capability, outward}`, `approval {approved_by:"nanda", approved_at, confirmation_id} | null`, `operational_state {attempt, session_id?}`.
   - `ExecutionResult`: `status` ∈ `completed | failed | needs_approval | needs_input | rejected`, plus `result`, `evidence[]`, `actions_taken[]`, `artifacts[]`, `errors[] {code, message, retryable}`, `next_recommendation`.

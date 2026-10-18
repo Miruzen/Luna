@@ -1,5 +1,5 @@
 // Nanda declines or cancels a proposal ("Batal" on the confirm card). Moves any non-terminal work
-// item to `cancelled` through the lifecycle rules (stage-2/docs/STATE_OWNERSHIP.md). Nothing is executed.
+// item to `cancelled` through the lifecycle rules (Stage/stage-2/docs/STATE_OWNERSHIP.md). Nothing is executed.
 import { adminClient, json, readJson, requireUser, withCors } from "../_shared/http.ts";
 import { applyEvent, loadWorkItem } from "../_shared/state/store.ts";
 
