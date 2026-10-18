@@ -45,13 +45,14 @@ Lower layers never widen their own authority. If a decision isn't clearly theirs
 
 ## Repository map
 - `supabase/` — LUNA backend: migrations + Edge Functions (Deno/TypeScript)
-- `android-app/` — client app (paused; voice/mobile are out of Stage 1 scope)
+- `web/` — web client (ADR-019): Vite + React + TypeScript, hosted on Vercel
+- `android-app/` — Android client (paused; web first, ADR-019)
 - `docs/architecture/` — architecture docs and reconnaissance reports
 - `docs/DECISIONS.md` — decision log (accepted and deferred decisions)
 - `docs/OPEN_ITEMS.md` — reminders carried across stages until decided
 - `STAGE_1/`, `stage-2/` — stage-specific instructions, scope and progress
 
-## Current stage: Stage 2 (completed 2026-10-15) — Stage 3 not yet defined
+## Current stage: Stage 2 extension — web client (DEC-007); Stage 3 being written by Nanda
 Stage 2 rules stay in force until Stage 3 instructions exist. Open items to raise first: `docs/OPEN_ITEMS.md`.
 Source of truth for Stage 2 is the `stage-2/` folder. Read in this order: `stage-2/CLAUDE_STAGE_2_START_HERE.md` → `stage-2/STAGE_2_PLAN.md` → `stage-2/STAGE_2_PROGRESS.md`; `stage-2/docs/` are the design guides.
 Record every Stage 2 decision and progress step in `stage-2/STAGE_2_PROGRESS.md` (and `stage-2/docs/DECISIONS.md`), so work can be backtracked or redone.

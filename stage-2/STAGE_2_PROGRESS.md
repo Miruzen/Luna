@@ -3,7 +3,7 @@
 Keep this file short and update it at the end of each meaningful session. History is at the bottom (newest first), so work can be backtracked or redone.
 
 ## Current status
-**Stage 2 COMPLETED** (approved by Nanda on 2026-10-15). The five carried items are tracked in `docs/OPEN_ITEMS.md` (OI-1…OI-5) until decided.
+Stage 2 core completed 2026-10-15. **Reopened for an extension: web client** (DEC-007, ADR-019), in progress.
 
 ## Last completed (2026-10-15)
 - WS1 Shared State: live and verified (`3881ead`).
@@ -32,7 +32,7 @@ Keep this file short and update it at the end of each meaningful session. Histor
 - Google OAuth app in Testing mode (refresh token expires every 7 days); Supabase free tier pauses after ~7 idle days.
 
 ## Current focus
-None. Waiting for Stage 3 instructions from Nanda.
+Web client v1: backend prep (CORS, cancel) → `web/` app → local test → Vercel.
 
 ## Direction
 - Luna: user intent, personal/strategic context, priorities, mission direction, delegation.
@@ -49,11 +49,13 @@ None for Stage 2. Open items: `docs/OPEN_ITEMS.md`.
 - Jarvis capabilities: only source-level evidence (recon @ `c14f579`); nothing runtime-tested.
 
 ## Exact next action
-Nanda defines Stage 3; at its start Claude raises `docs/OPEN_ITEMS.md`.
+Nanda tests the web app locally (http://localhost:5173), adds `http://localhost:5173/google/callback` as an Authorized redirect URI in Google Cloud Console, and creates/connects a Vercel account; then Claude deploys to Vercel.
 
 ---
 
 ## History
+- **2026-10-15** — Web v1 built and running locally: CORS (`withCors`, `ALLOWED_ORIGINS`) on all functions, verified (allowed origin gets headers, others do not); new `luna-cancel`; `web/` (Vite 8 + React 19 + TS 7): login, chat + mic (Web Speech API, id-ID), confirm/cancel card, result link, history from `work_items`, Connect Google (`/google/callback`, allowlisted). Production build OK; 72 backend tests pass. npm cache on D:.
+- **2026-10-15** — Nanda paused the multi-turn test (OI-7 recorded) and decided on a web client first (DEC-007/ADR-019): Vite + React + TS, Vercel, all v1 features, as a Stage 2 extension. Found: no Edge Function handles CORS yet.
 - **2026-10-15** — **Stage 2 closed** by Nanda. Carried items moved to the project-wide `docs/OPEN_ITEMS.md` (OI-1…OI-5) as reminders until decided; root `CLAUDE.md` now requires raising them at the start of every stage.
 - **2026-10-15** — DEC-006 accepted. Slice B implemented: adapter maps Jarvis max-turns to `failed`/`engine_incomplete` (retryable) with a test; F2 idempotency rule in `contract.ts`; ADR-017/018 added to `docs/DECISIONS.md` and root `CLAUDE.md`; ADR-011 got its Stage 2 requirements. 62 tests pass. Stage 2 acceptance check written; all criteria met.
 - **2026-10-15** — WS2 committed (`170fc2a`). Workstream 3 draft written: 18-row responsibility map (verified / proposed / unresolved) and 3 findings from Jarvis source: F1 no generic verification, F2 double retry layers, F3 adapter treats max-turns as completed. Logged DEC-006.

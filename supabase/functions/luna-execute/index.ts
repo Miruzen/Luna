@@ -6,14 +6,14 @@ import { checkCalendarOutcome } from "../_shared/calendar/acceptance.ts";
 import { validateEventArgs } from "../_shared/calendar/validate.ts";
 import { config } from "../_shared/config.ts";
 import { createCalendarEvent, GoogleReauthRequired, refreshAccessToken } from "../_shared/calendar/googleCalendarClient.ts";
-import { adminClient, json, readJson, requireUser } from "../_shared/http.ts";
+import { adminClient, json, readJson, requireUser, withCors } from "../_shared/http.ts";
 import { applyEvent, loadWorkItem } from "../_shared/state/store.ts";
 import { effectiveStatus, isDispatchStale, type WorkItemEvent } from "../_shared/state/workItem.ts";
 import type { ExecuteResult } from "../_shared/types.ts";
 
 const CONFIRMATION_ID = /^[0-9a-v]{5,1024}$/;
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
   const auth = await requireUser(req);
@@ -129,4 +129,4 @@ Deno.serve(async (req) => {
   }
 
   return json(result, status);
-});
+}));

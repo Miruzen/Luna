@@ -3,9 +3,9 @@
 // The exchange never happens on the device.
 import { CALENDAR_SCOPE, exchangeAuthCode } from "../_shared/calendar/googleCalendarClient.ts";
 import { resolveRedirectUri } from "../_shared/calendar/oauthRedirect.ts";
-import { adminClient, json, readJson, requireUser } from "../_shared/http.ts";
+import { adminClient, json, readJson, requireUser, withCors } from "../_shared/http.ts";
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
   const auth = await requireUser(req);
@@ -48,4 +48,4 @@ Deno.serve(async (req) => {
     return json({ error: "failed to store token" }, 500);
   }
   return json({ connected: true });
-});
+}));

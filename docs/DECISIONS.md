@@ -24,6 +24,7 @@ Statuses: **ACCEPTED** (in force) · **ACCEPTED (deferred)** (decided, not yet i
 | ADR-016 | LLM access uses **OpenRouter as one path, never the only one**: LUNA keeps a provider fallback chain (e.g. OpenRouter → DeepSeek direct) so an OpenRouter outage does not stop LUNA. Applies to LUNA now and to Jarvis later. Resolves D-03. | ACCEPTED (implemented in code 2026-10-14; not deployed) | 2026-10-13 |
 | ADR-017 | Execution verification is split: the execution layer checks that each tool call succeeded; **LUNA accepts the outcome** (does it match what Nanda approved?). Refines Stage 1 locked decision 8 after OpenJarvis showed no generic verification step (Stage 2 F1, DEC-006) | ACCEPTED | 2026-10-15 |
 | ADR-018 | Every outward action must be **idempotent on the work-item id** (`request_id`), because the engine may retry inside an attempt and LUNA may retry across attempts (Stage 2 F2, DEC-006) | ACCEPTED | 2026-10-15 |
+| ADR-019 | The first client is a **web app** (`web/`, Vite + React + TypeScript, hosted on Vercel), before the Android app: progress is easier to see and test. It talks only to LUNA's Edge Functions with the publishable key; secrets stay server-side | ACCEPTED | 2026-10-15 |
 
 ### ADR-013 notes
 - The execution layer must not re-prompt for approval and must not remember approvals of its own (cf. Jarvis `approval_store` "always approve", recon F6). An escalation (`needs_approval`) happens only when a task needs something **outside** the permissions LUNA granted.

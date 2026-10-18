@@ -76,6 +76,15 @@
 - Decision owner: Nanda
 - Date: 2026-10-15
 
+### DEC-007 — Stage 2 extension: web client
+- Status: **Accepted** (Nanda, 2026-10-15)
+- Context: Nanda wants to see and test progress directly before building the Android app. Stage 3 is still being written.
+- Decision: build a web client as a **Stage 2 extension** (project-wide: ADR-019). Stack Vite + React + TypeScript in `web/`; hosting on Vercel; version 1 has all proposed features: login, chat (text + mic via the browser's Web Speech API), confirm/cancel card, result with event link, work-item history panel, "Connect Google".
+- Backend changes needed: CORS on the Edge Functions (none handled it; browsers would be blocked) and a cancel endpoint.
+- Manual steps for Nanda: add the web callback URL in Google Cloud Console; create/connect a Vercel account.
+- Decision owner: Nanda
+- Date: 2026-10-15
+
 ## Known deferred decisions
 > Superseded by DEC-001 (Accepted 2026-10-14): Jarvis codebase strategy = ADR-014, memory/persona = ADR-015, model fallback = ADR-016 (all in `docs/DECISIONS.md`). Only **Jarvis hosting** below is still deferred.
 ### Jarvis hosting

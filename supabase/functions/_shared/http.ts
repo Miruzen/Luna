@@ -29,3 +29,27 @@ export async function readJson(req: Request): Promise<Record<string, unknown> | 
     return null;
   }
 }
+
+// CORS for the web client (ADR-019). Only origins listed in ALLOWED_ORIGINS (comma-separated,
+// exact match, e.g. "http://localhost:5173,https://luna.vercel.app") get CORS headers; browsers
+// block every other origin. Non-browser callers (scripts) are unaffected.
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = (Deno.env.get("ALLOWED_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (!allowed.includes(origin)) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+export function withCors(handler: (req: Request) => Promise<Response>): (req: Request) => Promise<Response> {
+  return async (req) => {
+    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
+    const res = await handler(req);
+    for (const [k, v] of Object.entries(corsHeaders(req))) res.headers.set(k, v);
+    return res;
+  };
+}

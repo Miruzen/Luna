@@ -3,7 +3,7 @@ import { config } from "../_shared/config.ts";
 import { createProvider } from "../_shared/llm/factory.ts";
 import type { ChatMessage } from "../_shared/llm/provider.ts";
 import { validateEventArgs } from "../_shared/calendar/validate.ts";
-import { adminClient, json, readJson, requireUser } from "../_shared/http.ts";
+import { adminClient, json, readJson, requireUser, withCors } from "../_shared/http.ts";
 import { createProposal } from "../_shared/state/store.ts";
 import { annotateRelativeDays, formatRange, localNow, relativeDateTable } from "../_shared/time.ts";
 import type { IntentResult } from "../_shared/types.ts";
@@ -44,7 +44,7 @@ function stopwatch() {
   };
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
   const sw = stopwatch();
 
@@ -122,4 +122,4 @@ Deno.serve(async (req) => {
     console.error(e);
     return json({ error: "intent extraction failed" }, 500);
   }
-});
+}));
