@@ -3,7 +3,7 @@
 Keep this file short and update it at the end of each meaningful session. History is at the bottom (newest first), so work can be backtracked or redone. Plan: `STAGE_3_PLAN.md`.
 
 ## Current status
-Stage 3 started 2026-10-18. **Stage 3.1 — LUNA Readiness: all acceptance criteria met (report below, 2026-11-01); awaiting Nanda's formal acceptance.** Stage 3.2 (real Jarvis integration, local PC per DEC-306) has not started.
+Stage 3 started 2026-10-18. **Stage 3.1 — LUNA Readiness: accepted by Nanda 2026-11-01 (DEC-309).** Active phase: **3.2 — Real Jarvis Integration** (local PC per DEC-306), step 1: source inspection.
 
 ## Discrepancies found (plan vs. repository)
 - **Login is not Google OAuth.** The web app signs in with Supabase email + password (`web/src/components/Login.tsx`). Google OAuth is only used for "Connect Google" (calendar access, `web/src/lib/google.ts` → `auth-google-exchange`). The plan's "Google OAuth/login" check covers both flows.
@@ -52,6 +52,7 @@ Findings:
 None open.
 
 ## Decisions (DEC-3xx)
+- **DEC-309 (2026-11-01, Nanda):** Stage 3.1 accepted. Stage 3.2 may start. Go-ahead to clone OpenJarvis to `D:Kerjaanjarvis-recon` (outside the LUNA repo, read-only inspection; not installed, not run, not added to the repo; ADR-014 subtree still needs its own go-ahead).
 - **DEC-308 (2026-11-01, Nanda chose option A):** support all-day events inside the existing calendar.events.create capability (not a new capability). Shape: optional `all_day: true`; `start_datetime`/`end_datetime` stay, normalized by validation to local midnights (end exclusive), so projection, contract and stored args keep their form. Google receives `start.date`/`end.date`; LUNA's acceptance check compares dates for all-day events. `all_day` added to the projection allowlist so Jarvis (3.2) receives it.
 - **DEC-307 (2026-11-01, implementation, open for Nanda to reverse):** fix for F3.1-7: only the open dialogue goes to the LLM (`_shared/history.ts` `openDialogue`); a card, cancel, created or failed turn closes it. Trade-off: a follow-up edit after a card ("ganti jadi jam 4") is no longer understood; LUNA asks for the full request.
 - **DEC-301 (2026-10-26):** T1–T7 and AC1–AC8 approved as proposed.
@@ -96,6 +97,7 @@ Nanda formally accepts Stage 3.1; then Claude starts Stage 3.2 with the OpenJarv
 ---
 
 ## History
+- **2026-11-01** — Nanda accepted Stage 3.1 (DEC-309); commit pushed. Stage 3.2 started with the source inspection. Open items raised at stage start: OI-4 (= 3.2 scope), OI-5, OI-6 (relevant: Jarvis tool calling on free models).
 - **2026-11-01** — All-day retest passed (Nanda + DB). T7 acceptance report written: AC1–AC8 pass. Web bundle rebuilt and scanned for secrets (clean).
 - **2026-11-01** — Deployed `luna-intent` + `luna-execute` with all-day support (DEC-308) on Nanda's go. Waiting for Nanda's browser retest.
 - **2026-11-01** — Deployed `luna-intent` (T4) and applied migration `20261101000000_revoke_rls_auto_enable_execute` (EXECUTE now only postgres + service_role; advisor warning gone; remaining notices: `user_google_tokens` RLS without policies = intended, leaked-password protection off = moot with signups closed). F3.1-8/9 from Nanda's live test fixed (DEC-308): all-day in types/validate/Google client/acceptance/policy/tool schema/summary (`formatAllDay`), notes go to description, relative years ("5 tahun kedepan", "tahun depan", "dua tahun lagi"), open-dialogue user turns annotated too, prompt rule so a confirmed date ("iya") is not questioned again. Tests: 90 passed. Live eval 11/15: both new all-day cases OK; 3 OpenRouter timeouts at 30 s (OI-6, not logic); "iya" failed once, fixed by the prompt rule, rerun 3/3 OK. Not deployed yet (needs Nanda's go: `luna-intent` + `luna-execute`).
