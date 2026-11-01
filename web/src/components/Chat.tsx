@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { cancel, ERROR_TEXT, execute, intent, type IntentResult } from "../lib/luna";
+import { cancel, execute, intent, type IntentResult } from "../lib/luna";
+import { cardStateAfterExecute, errorText, type CardState } from "../lib/outcome";
 
-type Card = Extract<IntentResult, { kind: "confirm" }> & { state: "pending" | "busy" | "done" | "cancelled" };
+type Card = Extract<IntentResult, { kind: "confirm" }> & { state: CardState };
 interface Message {
   id: number;
   role: "user" | "luna";
@@ -60,16 +61,13 @@ export function Chat({ onChange }: { onChange: () => void }) {
     updateCard(card.confirmation_id, { state: "busy" });
     try {
       const r = await execute(card.confirmation_id);
-      if (r.ok) {
-        updateCard(card.confirmation_id, { state: "done" });
-        push({ role: "luna", text: "✅ Sudah masuk ke Google Calendar.", link: r.html_link });
-      } else {
-        updateCard(card.confirmation_id, { state: r.error === "google_not_connected" ? "pending" : "done" });
-        push({ role: "luna", text: ERROR_TEXT[r.error] ?? `Gagal: ${r.error}`, link: r.html_link });
-      }
+      updateCard(card.confirmation_id, { state: cardStateAfterExecute(r) });
+      if (r.ok) push({ role: "luna", text: "✅ Sudah masuk ke Google Calendar.", link: r.html_link });
+      else push({ role: "luna", text: errorText(r.error), link: r.html_link });
     } catch (e) {
-      updateCard(card.confirmation_id, { state: "pending" });
-      push({ role: "luna", text: `Error: ${(e as Error).message}` });
+      // Outcome unknown (network etc.); retrying is safe because execute is idempotent.
+      updateCard(card.confirmation_id, { state: cardStateAfterExecute(null) });
+      push({ role: "luna", text: `Koneksi gagal (${(e as Error).message}). Tekan "Coba lagi".` });
     }
     onChange();
   }
@@ -112,8 +110,15 @@ export function Chat({ onChange }: { onChange: () => void }) {
                     <button className="ghost" onClick={() => decline(m.card!)}>Batal</button>
                   </div>
                 )}
+                {m.card.state === "retry" && (
+                  <div className="row">
+                    <span className="bad small">Gagal</span>
+                    <button onClick={() => confirm(m.card!)}>Coba lagi</button>
+                  </div>
+                )}
                 {m.card.state === "busy" && <div className="muted small">Memproses…</div>}
-                {m.card.state === "done" && <div className="muted small">Diproses</div>}
+                {m.card.state === "done" && <div className="ok small">✅ Berhasil</div>}
+                {m.card.state === "failed" && <div className="bad small">Gagal</div>}
                 {m.card.state === "cancelled" && <div className="muted small">Dibatalkan</div>}
               </div>
             )}

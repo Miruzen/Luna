@@ -79,6 +79,8 @@ Does not block Stage 1: the adapter is built and tested against a mocked Jarvis 
 - PC vs VPS: Nanda is researching VPS options.
 - If it runs on the PC: Jarvis and all its data/caches go on drive **D:** (C: has ~21 GB free).
 
+**Decided by Nanda (2026-11-01, Stage 3 DEC-306): local PC first.** Jarvis runs on the PC (on D:) with the mailbox/pull transport. A cloud host stays a later option. Trade-off accepted: Jarvis works only while the PC is on.
+
 ### D-02 — Codebase strategy: fork vs contribute upstream
 | | Fork | Upstream PR |
 |---|---|---|

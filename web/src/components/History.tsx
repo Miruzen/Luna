@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { errorLabel } from "../lib/outcome";
 
 interface WorkItemRow {
   id: string;
@@ -64,7 +65,7 @@ export function History({ refreshKey }: { refreshKey: number }) {
               </div>
               <div className="muted small">
                 Dibuat {new Date(it.created_at).toLocaleString("id-ID")} · percobaan {it.attempt}
-                {it.last_result?.error && ` · ${it.last_result.error}`}
+                {it.last_result?.error && ` · ${errorLabel(it.last_result.error)}`}
               </div>
               {it.last_result?.html_link && (
                 <a className="small" href={it.last_result.html_link} target="_blank" rel="noreferrer">Buka event ↗</a>
