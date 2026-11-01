@@ -3,6 +3,9 @@ export interface CreateCalendarEventArgs {
   start_datetime: string; // ISO 8601 with offset, e.g. 2026-09-29T14:00:00+07:00
   end_datetime: string;
   timezone: string;       // IANA, e.g. Asia/Jakarta
+  // Whole-day event. start/end are then local midnights: the start of the first day and the
+  // midnight after the last day (exclusive, like Google's end.date). Normalized by validateEventArgs.
+  all_day?: true;
   description?: string;
   attendees?: string[];   // emails only
 }

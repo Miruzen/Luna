@@ -25,3 +25,24 @@ Deno.test("acceptance: wrong title and missing times are reported", () => {
     "end: missing in created event",
   ]);
 });
+
+// All-day (Stage 3.1, F3.1-8): Google returns dates; end exclusive on both sides.
+const approvedAllDay = {
+  title: "Come back",
+  start_datetime: "2031-02-27T00:00:00+07:00",
+  end_datetime: "2031-02-28T00:00:00+07:00",
+  timezone: "Asia/Jakarta",
+  all_day: true as const,
+};
+
+Deno.test("all-day: matching dates pass", () => {
+  assertEquals(checkCalendarOutcome(approvedAllDay, { summary: "Come back", start: "2031-02-27", end: "2031-02-28" }), []);
+});
+
+Deno.test("all-day: a timed event or a wrong date is rejected", () => {
+  assertEquals(
+    checkCalendarOutcome(approvedAllDay, { summary: "Come back", start: "2031-02-27T00:00:00+07:00", end: "2031-02-28T00:00:00+07:00" }).length,
+    2,
+  );
+  assertEquals(checkCalendarOutcome(approvedAllDay, { summary: "Come back", start: "2031-02-26", end: "2031-02-28" }).length, 1);
+});

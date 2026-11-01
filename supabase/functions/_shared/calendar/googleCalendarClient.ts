@@ -1,5 +1,6 @@
 import { config } from "../config.ts";
 import type { CreateCalendarEventArgs } from "../types.ts";
+import { localDate } from "../time.ts";
 
 export const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -63,8 +64,13 @@ export async function createCalendarEvent(
       id: eventId,
       summary: args.title,
       description: args.description,
-      start: { dateTime: args.start_datetime, timeZone: args.timezone },
-      end: { dateTime: args.end_datetime, timeZone: args.timezone },
+      // All-day events use dates; Google's end.date is exclusive, like the stored end.
+      start: args.all_day
+        ? { date: localDate(args.start_datetime, args.timezone) }
+        : { dateTime: args.start_datetime, timeZone: args.timezone },
+      end: args.all_day
+        ? { date: localDate(args.end_datetime, args.timezone) }
+        : { dateTime: args.end_datetime, timeZone: args.timezone },
       attendees: args.attendees?.map((email) => ({ email })),
     }),
   });
@@ -82,6 +88,13 @@ export async function createCalendarEvent(
   return { ...eventFields(e), created: true };
 }
 
-// Fields LUNA needs for its acceptance check (ADR-017).
+// Fields LUNA needs for its acceptance check (ADR-017). All-day events come back with
+// start.date / end.date ("2031-02-27") instead of dateTime.
 // deno-lint-ignore no-explicit-any
-const eventFields = (e: any) => ({ id: e.id, htmlLink: e.htmlLink, summary: e.summary, start: e.start?.dateTime, end: e.end?.dateTime });
+const eventFields = (e: any) => ({
+  id: e.id,
+  htmlLink: e.htmlLink,
+  summary: e.summary,
+  start: e.start?.dateTime ?? e.start?.date,
+  end: e.end?.dateTime ?? e.end?.date,
+});

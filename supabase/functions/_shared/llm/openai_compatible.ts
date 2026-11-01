@@ -12,13 +12,14 @@ export interface OpenAICompatibleConfig {
   fetchFn?: typeof fetch; // injectable for tests
 }
 
-const DEFAULT_TIMEOUT_MS = 20_000;
+const DEFAULT_TIMEOUT_MS = 30_000; // DEC-304: free models sometimes need 15-25 s (OI-6)
 
 const TOOL = {
   type: "function",
   function: {
     name: "create_google_calendar_event",
-    description: "Propose a calendar event for the user to confirm. Only call when date and start time are clear.",
+    description:
+      "Propose a calendar event for the user to confirm. Only call when the date is clear and either the start time is clear or the event is all-day.",
     parameters: {
       type: "object",
       properties: {
@@ -26,6 +27,11 @@ const TOOL = {
         start_datetime: { type: "string", description: "ISO 8601 with UTC offset" },
         end_datetime: { type: "string", description: "ISO 8601 with UTC offset" },
         timezone: { type: "string", description: "IANA timezone" },
+        all_day: {
+          type: "boolean",
+          description:
+            "true for whole-day events (seharian, sehari penuh, all day, ulang tahun, cuti, libur). Then start_datetime = 00:00 of the first day and end_datetime = 00:00 of the day after the last day.",
+        },
         description: { type: "string" },
         attendees: { type: "array", items: { type: "string" }, description: "Emails only. Never guess emails." },
       },
@@ -48,7 +54,13 @@ export class OpenAICompatibleProvider implements LLMProvider {
       `Resolve relative dates ("tomorrow", "besok", "next Monday") against the current local datetime. ` +
       `Always use timezone "${input.timezone}" and write datetimes as ISO 8601 with its UTC offset. ` +
       `If the date or start time is missing or ambiguous, ask ONE short clarifying question instead of calling the tool. ` +
+      `Dates in parentheses after the user's words were computed by LUNA (weekday, ISO date, "sudah lewat" = already passed): trust them and never recompute weekdays. ` +
+      `If the user's weekday does not match that date, or the date has already passed, do not call the tool: ask ONE question that states the correct weekday and date. ` +
+      `Once the user confirms or corrects a date you asked about (e.g. "iya"), use the date from your question and call the tool; do not ask about the old date again. ` +
+      `Build each event only from the current request and the answers to your own questions in this conversation. ` +
       `If no title is given, derive a short one from the request. If duration is missing, use 1 hour. ` +
+      `"Seharian" / "sehari penuh" / "all day" means an all-day event: set all_day true and do not ask for a time. ` +
+      `Put notes the user gives ("notes", "catatan", "keterangan") in description. ` +
       `Never invent attendee emails. If the request is not about scheduling, briefly say you can only schedule events. ` +
       `Reply in the same language as the user.` +
       (input.calendarHints ? `

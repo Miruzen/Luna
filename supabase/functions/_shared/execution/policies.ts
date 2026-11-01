@@ -9,7 +9,7 @@ export const CALENDAR_CREATE_POLICY: ProjectionPolicy = {
   objective: "Create a Google Calendar event using exactly the given inputs.",
   expectedOutput: "The created event id and link.",
   requiredInputs: ["title", "start_datetime", "end_datetime", "timezone"],
-  optionalInputs: ["description", "attendees"],
+  optionalInputs: ["description", "attendees", "all_day"], // without all_day an executor would create a timed event
   constraints: [
     "Use the inputs exactly; do not reinterpret or change dates, times or the title.",
     "Do not invite anyone not listed in inputs.attendees.",

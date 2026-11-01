@@ -5,7 +5,8 @@ import type { ChatMessage } from "../_shared/llm/provider.ts";
 import { validateEventArgs } from "../_shared/calendar/validate.ts";
 import { adminClient, json, readJson, requireUser, withCors } from "../_shared/http.ts";
 import { createProposal } from "../_shared/state/store.ts";
-import { annotateRelativeDays, formatRange, localNow, relativeDateTable } from "../_shared/time.ts";
+import { annotateExplicitDates, annotateRelativeDays, formatAllDay, formatRange, localNow, relativeDateTable } from "../_shared/time.ts";
+import { openDialogue } from "../_shared/history.ts";
 import type { IntentResult } from "../_shared/types.ts";
 
 // Reuses the caller's session if it is theirs (RLS), otherwise starts a new one.
@@ -26,7 +27,7 @@ async function loadHistory(db: SupabaseClient, sessionId: string): Promise<ChatM
     .order("created_at", { ascending: false })
     .limit(config.historyTurns);
   if (error) throw error;
-  return (data ?? []).reverse() as ChatMessage[];
+  return openDialogue((data ?? []).reverse() as ChatMessage[]);
 }
 
 // Per-stage timings (ms), logged and returned as a Server-Timing header to find latency.
@@ -64,14 +65,18 @@ Deno.serve(withCors(async (req) => {
     sw.lap("history");
     const tz = config.defaultTimezone;
 
+    const annotate = (t: string) => annotateRelativeDays(annotateExplicitDates(t, tz), tz);
     const result = await createProvider().extractCalendarIntent({
-      // OI-3: relative-day words get their exact date from code, plus a computed date table,
-      // so the (free) model looks dates up instead of counting. Turns store the original text.
-      userText: annotateRelativeDays(text, tz),
+      // OI-3/OI-7: relative-day words and explicit dates get their exact date (and weekday, and
+      // "sudah lewat") from code, plus a computed date table, so the (free) model looks dates up
+      // instead of counting. Turns store the original text.
+      userText: annotate(text),
       nowLocal: localNow(tz),
       timezone: tz,
       calendarHints: relativeDateTable(tz),
-      history,
+      // Earlier user turns of the open dialogue too: the date may be in the previous message
+      // ("27 Februari 5 tahun kedepan" -> "Jam berapa?" -> "seharian"). Open dialogues are minutes old.
+      history: history.map((t) => (t.role === "user" ? { ...t, content: annotate(t.content) } : t)),
     });
     sw.lap("llm");
 
@@ -80,7 +85,10 @@ Deno.serve(withCors(async (req) => {
     if (result.kind === "tool_call") {
       const v = validateEventArgs(result.args);
       if (v.ok) {
-        const summary = `${v.args.title} — ${formatRange(v.args.start_datetime, v.args.end_datetime, v.args.timezone)}`;
+        const when = v.args.all_day
+          ? formatAllDay(v.args.start_datetime, v.args.end_datetime, v.args.timezone)
+          : formatRange(v.args.start_datetime, v.args.end_datetime, v.args.timezone);
+        const summary = `${v.args.title} — ${when}`;
         // Google event ids must be base32hex; a dash-less UUID (0-9a-f) qualifies.
         const confirmationId = crypto.randomUUID().replaceAll("-", "");
         // Store exactly what Nanda will see; luna-execute runs these args, not client-sent ones.

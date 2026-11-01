@@ -9,6 +9,7 @@ export interface EventArgs {
   start_datetime: string;
   end_datetime: string;
   timezone: string;
+  all_day?: true;
   description?: string;
   attendees?: string[];
 }

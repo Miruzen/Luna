@@ -6,13 +6,19 @@
 //     scripts/date-eval.ts [--no-hints]
 import { buildProvider } from "../supabase/functions/_shared/llm/factory.ts";
 import { validateEventArgs } from "../supabase/functions/_shared/calendar/validate.ts";
-import { annotateRelativeDays, localNow, relativeDateTable } from "../supabase/functions/_shared/time.ts";
+import { annotateExplicitDates, annotateRelativeDays, localNow, relativeDateTable } from "../supabase/functions/_shared/time.ts";
+import { openDialogue } from "../supabase/functions/_shared/history.ts";
+import type { ChatMessage } from "../supabase/functions/_shared/llm/provider.ts";
 
 const TZ = "Asia/Jakarta";
 const NOW = new Date("2026-10-15T03:00:00Z"); // Thursday 15 Oct 2026, 10:00 WIB
 const withHints = !Deno.args.includes("--no-hints");
 
-const CASES: { text: string; expect: [string, string] | "clarify" }[] = [
+const u = (content: string): ChatMessage => ({ role: "user", content });
+const a = (content: string): ChatMessage => ({ role: "assistant", content });
+
+// `history` is passed through openDialogue, exactly like luna-intent does.
+const CASES: { text: string; expect: [string, string] | "clarify"; history?: ChatMessage[] }[] = [
   { text: "besok jam 3 sore meeting 1 jam", expect: ["2026-10-16T15:00", "2026-10-16T16:00"] },
   { text: "lusa jam 9 pagi meeting 30 menit", expect: ["2026-10-17T09:00", "2026-10-17T09:30"] },
   { text: "besok lusa jam 2 siang rapat 1 jam", expect: ["2026-10-17T14:00", "2026-10-17T15:00"] },
@@ -23,6 +29,33 @@ const CASES: { text: string; expect: [string, string] | "clarify" }[] = [
   { text: "rabu minggu depan jam 1 siang presentasi 1 jam", expect: ["2026-10-21T13:00", "2026-10-21T14:00"] },
   { text: "tanggal 3 november jam 10 pagi seminar 2 jam", expect: ["2026-11-03T10:00", "2026-11-03T12:00"] },
   { text: "jadwalin meeting sama tim", expect: "clarify" },
+  // OI-7 (Stage 3.1 T4): wrong weekday for a past explicit date must be questioned, not scheduled.
+  { text: "bikinin jadwal meeting untuk hari minggu 1’ oktober jam 3 sore", expect: "clarify" },
+  // OI-7: answering "iya" to LUNA's own question schedules exactly what was asked.
+  {
+    text: "iya",
+    history: [
+      u("bikinin jadwal meeting untuk hari minggu 1’ oktober jam 3 sore"),
+      a("1 Oktober 2026 itu hari Kamis dan sudah lewat. Maksudnya Minggu, 18 Oktober 2026 pukul 15:00?"),
+    ],
+    expect: ["2026-10-18T15:00", "2026-10-18T16:00"],
+  },
+  // F3.1-8/9: all-day events and relative years (Nanda's live test, 2026-11-01).
+  { text: 'Jadwalin tanggal 27 Februari 5 tahun kedepan seharian dengan notes "Come back to her"', expect: ["2031-02-27T00:00", "2031-02-28T00:00"] },
+  {
+    text: 'Seharian dengan notes "Come back to her"',
+    history: [u("Jadwalin tanggal 27 Februari 5 tahun kedepan"), a("Jam berapa mulai acara tersebut?")],
+    expect: ["2031-02-27T00:00", "2031-02-28T00:00"],
+  },
+  // F3.1-7: an earlier proposal must not be re-proposed for a new request.
+  {
+    text: "tes batal lusa jam 10 pagi",
+    history: [
+      u("tes kedaluwarsa besok jam 9 pagi 30 menit"),
+      a('Proposed event (awaiting user confirmation): {"title":"Test Kedaluwarsa","start_datetime":"2026-10-16T09:00:00+07:00","end_datetime":"2026-10-16T09:30:00+07:00","timezone":"Asia/Jakarta"}'),
+    ],
+    expect: ["2026-10-17T10:00", "2026-10-17T11:00"],
+  },
 ];
 
 const envText = await Deno.readTextFile("supabase/functions/.env");
@@ -40,10 +73,13 @@ for (const c of CASES) {
   let verdict: string;
   try {
     const r = await provider.extractCalendarIntent({
-      userText: withHints ? annotateRelativeDays(c.text, TZ, NOW) : c.text,
+      userText: withHints ? annotateRelativeDays(annotateExplicitDates(c.text, TZ, NOW), TZ, NOW) : c.text,
       nowLocal: localNow(TZ, NOW),
       timezone: TZ,
-      history: [],
+      // Same annotation of open-dialogue user turns as luna-intent.
+      history: openDialogue(c.history ?? []).map((t) =>
+        withHints && t.role === "user" ? { ...t, content: annotateRelativeDays(annotateExplicitDates(t.content, TZ, NOW), TZ, NOW) } : t
+      ),
       calendarHints: withHints ? relativeDateTable(TZ, NOW) : undefined,
     });
     if (c.expect === "clarify") verdict = r.kind === "text" ? "OK" : "WRONG (guessed instead of asking)";

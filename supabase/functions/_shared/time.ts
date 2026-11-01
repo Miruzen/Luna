@@ -29,6 +29,36 @@ export function formatRange(startIso: string, endIso: string, tz: string): strin
     : `${day.format(s)}, ${time.format(s)} – ${day.format(e)}, ${time.format(e)}`;
 }
 
+// Calendar date ("2026-10-15") of an instant in tz.
+export function localDate(iso: string, tz: string): string {
+  const p = partsIn(new Date(iso), tz);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+export function addDays(date: string, n: number): string {
+  return new Date(Date.parse(`${date}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+}
+
+// Local midnight of a calendar date in tz, as ISO with that day's UTC offset ("2031-02-27T00:00:00+07:00").
+export function midnightIso(date: string, tz: string): string {
+  const guess = new Date(`${date}T00:00:00Z`);
+  const p = partsIn(guess, tz);
+  const offMin = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - guess.getTime()) / 60000);
+  const sign = offMin >= 0 ? "+" : "-";
+  const abs = Math.abs(offMin);
+  return `${date}T00:00:00${sign}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
+}
+
+// "Fri, 27 Feb 2031 (all day)" or "Fri, 27 Feb 2031 – Sun, 1 Mar 2031 (all day)". endIso is exclusive
+// (the midnight after the last day), as stored for all-day events.
+export function formatAllDay(startIso: string, endIso: string, tz: string): string {
+  const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  const f = (d: string) => fmt.format(new Date(`${d}T12:00:00Z`));
+  const first = localDate(startIso, tz);
+  const last = addDays(localDate(endIso, tz), -1);
+  return first >= last ? `${f(first)} (all day)` : `${f(first)} – ${f(last)} (all day)`;
+}
+
 const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const DAY_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -69,6 +99,50 @@ export function relativeDateTable(tz: string, now = new Date(), days = 14): stri
 const RELATIVE_DAYS: Record<string, number> = {
   "besok lusa": 2, "lusa": 2, "besok": 1, "hari ini": 0, "nanti malam": 0, "malam ini": 0,
 };
+// Explicit dates get the same treatment (OI-7): "minggu 1 oktober" -> "minggu 1 oktober (Kamis
+// 2026-10-01, sudah lewat; tahun depan: Jumat 2027-10-01)". The free model stated wrong weekdays
+// for explicit dates and proposed past ones; now code states the weekday and whether it has passed.
+const MONTHS: Record<string, number> = {
+  januari: 1, jan: 1, january: 1, februari: 2, feb: 2, february: 2, maret: 3, mar: 3, march: 3,
+  april: 4, apr: 4, mei: 5, may: 5, juni: 6, jun: 6, june: 6, juli: 7, jul: 7, july: 7,
+  agustus: 8, agu: 8, agt: 8, aug: 8, august: 8, september: 9, sept: 9, sep: 9,
+  oktober: 10, okt: 10, oct: 10, october: 10, november: 11, nov: 11, desember: 12, des: 12, dec: 12, december: 12,
+};
+const MONTH_RE = Object.keys(MONTHS).sort((a, b) => b.length - a.length).join("|");
+// Years ahead: "tahun depan" = +1, "5 tahun kedepan" / "lima tahun lagi" = +5.
+const YEAR_WORDS: Record<string, number> = {
+  satu: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6, tujuh: 7, delapan: 8, sembilan: 9, sepuluh: 10,
+};
+const YEARS_AHEAD = `(?:(\\d{1,2}|${Object.keys(YEAR_WORDS).join("|")})\\s*)?tahun\\s*(?:ke\\s*depan|depan|lagi)`;
+// "1 oktober", "1’ oktober", "3 nov 2026", "27 februari 5 tahun kedepan". The day must be followed by
+// a month name, so "jam 3" never matches.
+const EXPLICIT_DATE = new RegExp(
+  `\\b(\\d{1,2})\\s*['’]?\\s*(${MONTH_RE})\\b(?:\\s+(\\d{4})\\b|\\s+${YEARS_AHEAD}\\b)?`,
+  "gi",
+);
+
+export function annotateExplicitDates(text: string, tz: string, now = new Date()): string {
+  const p = partsIn(now, tz);
+  const today = Date.UTC(+p.year, +p.month - 1, +p.day, 12);
+  const at = (y: number, m: number, d: number) => {
+    const t = Date.UTC(y, m - 1, d, 12);
+    const date = new Date(t);
+    // Reject impossible dates ("31 februari") instead of letting Date roll them over.
+    return date.getUTCMonth() === m - 1 ? { t, label: `${HARI[date.getUTCDay()]} ${date.toISOString().slice(0, 10)}` } : null;
+  };
+  return text.replace(EXPLICIT_DATE, (match, day: string, month: string, absYear?: string, ahead?: string) => {
+    const m = MONTHS[month.toLowerCase()];
+    const yearsAhead = /tahun/i.test(match) ? (ahead ? YEAR_WORDS[ahead.toLowerCase()] ?? +ahead : 1) : 0;
+    const year = absYear ?? (yearsAhead ? String(+p.year + yearsAhead) : undefined);
+    const d = at(year ? +year : +p.year, m, +day);
+    if (!d) return match;
+    if (d.t >= today) return `${match} (${d.label})`;
+    if (year) return `${match} (${d.label}, sudah lewat)`;
+    const next = at(+p.year + 1, m, +day);
+    return `${match} (${d.label}, sudah lewat${next ? `; tahun depan: ${next.label}` : ""})`;
+  });
+}
+
 export function annotateRelativeDays(text: string, tz: string, now = new Date()): string {
   const p = partsIn(now, tz);
   const base = Date.UTC(+p.year, +p.month - 1, +p.day, 12);
